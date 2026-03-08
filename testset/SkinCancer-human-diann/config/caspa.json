@@ -1,0 +1,24 @@
+{
+  "project": {
+    "name": "SkinCancer SCP (human)",
+    "species_label": "human",
+    "description": "Single-cell proteomics of human skin cancer tissue for tumour microenvironment analysis"
+  },
+  "input": {
+    "pg_matrix": "D:/CASPA/testset/SkinCancer-human-diann/report.pg_matrix.tsv",
+    "spectronaut_tsv": null,
+    "sample_sheet": "config/ms_inputs.tsv"
+  },
+  "scp": {
+    "custom_proteins": "",
+    "llm": {
+      "api_key": "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",
+      "model": "gpt-5.2",
+      "base_url": "",
+      "condition_b": true,
+      "provider": "openai",
+      "thinking_budget": 0
+    },
+    "exclude_run_regex": "library|500cell"
+  }
+}
