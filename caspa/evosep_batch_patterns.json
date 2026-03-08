@@ -1,0 +1,18 @@
+{
+  "_comment": "Evosep batch detection patterns for caspa/assign_batches.py. Patterns are tried in order; first match wins per sample.",
+  "_format": "regex is applied case-insensitively to sample_id. group selects the capture group used as the batch key; its trailing digits determine sort order.",
+  "patterns": [
+    {
+      "name": "evosep_plate",
+      "regex": "[_\\-](s\\d+)-[a-h]\\d+",
+      "group": 1,
+      "description": "PRIMARY — Evosep plate identifier 'S{N}-{well}' (e.g. S4-H1, s1-a1). S{N} = physical plate loaded on Evosep, well = position in 96-well plate. Batch = plate number."
+    },
+    {
+      "name": "plate_keyword",
+      "regex": "(?<![a-zA-Z])plate(\\d+)",
+      "group": 1,
+      "description": "FALLBACK — Matches 'plate1', 'plate2' etc. when no Evosep S{N}-{well} pattern is present. Batch = plate number."
+    }
+  ]
+}
