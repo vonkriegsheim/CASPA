@@ -1,18 +1,16 @@
 {
-  "_comment": "Evosep batch detection patterns for caspa/assign_batches.py. Patterns are tried in order; first match wins per sample.",
-  "_format": "regex is applied case-insensitively to sample_id. group selects the capture group used as the batch key; its trailing digits determine sort order.",
+  "_comment": "Evosep batch detection patterns for caspa/assign_batches.py.",
+  "_format": "regex applied case-insensitively to sample_id. group_plate, group_well, group_run select capture groups. Patterns tried in order; first match wins.",
+  "gap_threshold": 20,
+  "_gap_note": "Two consecutive runs from the same plate are considered a new batch when their run-number gap exceeds this value. Within a session cells are injected sequentially (gap ~1); between sessions (different days/loadings) the gap is typically >50. Default 20 works for standard hexSCP experiments.",
   "patterns": [
     {
-      "name": "evosep_plate",
-      "regex": "[_\\-](s\\d+)-[a-h]\\d+",
-      "group": 1,
-      "description": "PRIMARY — Evosep plate identifier 'S{N}-{well}' (e.g. S4-H1, s1-a1). S{N} = physical plate loaded on Evosep, well = position in 96-well plate. Batch = plate number."
-    },
-    {
-      "name": "plate_keyword",
-      "regex": "(?<![a-zA-Z])plate(\\d+)",
-      "group": 1,
-      "description": "FALLBACK — Matches 'plate1', 'plate2' etc. when no Evosep S{N}-{well} pattern is present. Batch = plate number."
+      "name": "evosep_standard",
+      "description": "Standard Evosep naming: ..._{S{N}}-{well}_{_}_{run_number}. S{N}=physical plate, well=96-well position A1-H12, run_number=absolute injection counter (last _-separated integer).",
+      "regex": "[_\\-](s\\d+)-([a-h]\\d+).*_(\\d+)$",
+      "group_plate": 1,
+      "group_well": 2,
+      "group_run": 3
     }
   ]
 }
