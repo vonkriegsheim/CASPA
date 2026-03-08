@@ -45,22 +45,41 @@ def parse_args():
     return p.parse_args()
 
 
+SKIP_COLS = {"Protein.Group", "Protein.Ids", "Protein.Names", "Genes",
+             "First.Protein.Description", "Proteotypic",
+             "N.Sequences", "N.Proteotypic.Sequences", "Protein.Descriptions",
+             "Protein.Q.Value", "Global.Q.Value"}
+
+
+def stem_from_col(col: str) -> str:
+    """Mirror scp_qc_filter_cells_pg_matrix.py:stem_from_header().
+
+    DIA-NN columns look like 'input\\filename.raw' or 'input/filename.d'.
+    The QC filter strips path prefix + extension before matching manifest sample_ids,
+    so sample_id must be the bare stem (e.g. 'filename', no prefix or extension).
+    """
+    from pathlib import Path as _Path
+    s = str(col)
+    if "\\" in s or "/" in s:
+        return _Path(s).stem
+    if "." in s and s.rsplit(".", 1)[1].lower() in ("raw", "d", "mzml", "wiff"):
+        return _Path(s).stem
+    return s
+
+
 def infer_sample_ids_from_pg_matrix(pg_matrix_path):
-    """Read the header row and return all sample columns (after Protein.Group etc.)."""
+    """Read the header row and return (col, stem) pairs for all sample columns."""
     with open(pg_matrix_path, encoding="utf-8", errors="replace") as fh:
         header = fh.readline().rstrip("\n").split("\t")
-    # DIA-NN pg_matrix: first cols are Protein.Group, Protein.Ids, Protein.Names, Genes, First.Protein.Description
-    skip_cols = {"Protein.Group", "Protein.Ids", "Protein.Names", "Genes",
-                 "First.Protein.Description", "Proteotypic"}
-    samples = [c for c in header if c not in skip_cols]
-    return samples
+    pairs = [(c, stem_from_col(c)) for c in header if c not in SKIP_COLS]
+    return pairs
 
 
-def build_sample_sheet(samples):
-    """Build ms_inputs.tsv content: sample_id | sample_file | batch."""
+def build_sample_sheet(pairs):
+    """Build ms_inputs.tsv: sample_id (stem) | sample_file (full col) | batch."""
     lines = [SAMPLE_SHEET_HEADER]
-    for s in samples:
-        lines.append(f"{s}\t{s}\t1\n")
+    for col, stem in pairs:
+        lines.append(f"{stem}\t{col}\t1\n")
     return "".join(lines)
 
 
