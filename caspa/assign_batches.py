@@ -2,23 +2,23 @@
 """caspa/assign_batches.py — Auto-assign batch numbers from Evosep file naming.
 
 A batch is a single contiguous acquisition session on the Evosep. The same plate
-(S{N}) can produce multiple batches if cells were loaded and run on different days.
+(S{N}) can produce multiple batches if cells were loaded and run on different days,
+or when consecutive 96-well plates are run back-to-back with almost no gap.
 
-Detection logic:
-  - Parse plate id, 96-well position (A1–H12), and absolute injection counter
-    from each sample_id using regexes defined in evosep_batch_patterns.json.
-  - Sort all samples by injection counter (run number).
-  - For each plate, two consecutive samples whose run numbers differ by more than
-    `gap_threshold` (default 20) are considered separate acquisition sessions,
-    i.e. separate batches.
-  - Global batch numbers are assigned in order of first appearance across all plates.
+Two detectors (both configurable in evosep_batch_patterns.json):
 
-Why run-number gap and not well position?
-  Non-cell injections (blanks, QC) scattered through the acquisition can appear at
-  arbitrary well positions, making monotonic well-order an unreliable indicator.
-  The run number gap is a direct measure of how many other injections happened
-  between two consecutive runs of the same plate, which directly reflects whether
-  an acquisition session was interrupted.
+  PRIMARY — run-number gap:
+    Two consecutive runs from the same plate are a new batch when their injection
+    counter gap exceeds `gap_threshold` (default 20). Within a session cells are
+    sequential (gap 1–6); between sessions the gap is typically >50.
+
+  SECONDARY — well-position drop:
+    Within an already-contiguous session (gap < gap_threshold), a new batch is
+    also triggered when the 96-well position drops by more than `well_drop_threshold`
+    (default 80 positions). This catches back-to-back full-plate reloads where the
+    well resets from H12→A1 (drop 95) with only a 1–2 run gap between plates.
+    The threshold of 80 avoids false splits from small drops like A10→A1 (drop 9)
+    caused by a few test injections before the main plate run.
 
 Usage:
     python caspa/assign_batches.py --workdir /path/to/experiment
@@ -65,8 +65,9 @@ def load_config(patterns_path):
     pats = [p for p in data.get("patterns", []) if not p.get("disabled")]
     if not pats:
         sys.exit(f"ERROR: no active patterns in {patterns_path}")
-    gap_threshold = data.get("gap_threshold", 20)
-    return pats, gap_threshold
+    gap_threshold       = data.get("gap_threshold", 20)
+    well_drop_threshold = data.get("well_drop_threshold", 80)
+    return pats, gap_threshold, well_drop_threshold
 
 
 def parse_sample(sample_id, patterns):
@@ -85,33 +86,46 @@ def parse_sample(sample_id, patterns):
 # Batch assignment by run-number gap
 # ---------------------------------------------------------------------------
 
-def compute_batches(tagged, gap_threshold):
+def compute_batches(tagged, gap_threshold, well_drop_threshold):
     """
     tagged: list of (row, pat_name, plate, well_int, run_number)
 
     Sort all samples by run number. For each plate, detect a new acquisition
-    session when consecutive run numbers differ by more than gap_threshold.
+    session via two criteria (both configurable):
+      1. Run-number gap > gap_threshold (primary)
+      2. Well-position drop > well_drop_threshold within a contiguous block (secondary)
     Global batch numbers are assigned in first-appearance order.
 
     Returns {id(row): global_batch_int}
     """
     sorted_rows = sorted(tagged, key=lambda x: x[4])   # sort by run_number
 
-    plate_session   = {}   # plate → current session index (1-based)
-    plate_last_run  = {}   # plate → last run number seen
-    session_order   = []   # (plate, session) in first-appearance order
-    session_seen    = set()
-    row_to_key      = {}   # id(row) → (plate, session)
+    plate_session    = {}   # plate → current session index (1-based)
+    plate_last_run   = {}   # plate → last run number seen
+    plate_last_well  = {}   # plate → last well_int seen (for secondary detector)
+    session_order    = []   # (plate, session) in first-appearance order
+    session_seen     = set()
+    row_to_key       = {}   # id(row) → (plate, session)
 
-    for row, _pat, plate, _well, run in sorted_rows:
+    for row, _pat, plate, well, run in sorted_rows:
         if plate not in plate_session:
-            plate_session[plate]  = 1
-            plate_last_run[plate] = run
+            plate_session[plate]   = 1
+            plate_last_run[plate]  = run
+            plate_last_well[plate] = well
         else:
-            gap = run - plate_last_run[plate]
-            if gap > gap_threshold:
+            run_gap   = run  - plate_last_run[plate]
+            well_drop = plate_last_well[plate] - well   # positive when well went back
+
+            if run_gap > gap_threshold:
+                # Primary: large injection-counter gap → new session
                 plate_session[plate] += 1
-            plate_last_run[plate] = run
+            elif well_drop > well_drop_threshold:
+                # Secondary: well position reset within a contiguous block →
+                # back-to-back plate reload (e.g. H12→A1, drop=95)
+                plate_session[plate] += 1
+
+            plate_last_run[plate]  = run
+            plate_last_well[plate] = well
 
         key = (plate, plate_session[plate])
         row_to_key[id(row)] = key
@@ -127,7 +141,7 @@ def compute_batches(tagged, gap_threshold):
 # Main
 # ---------------------------------------------------------------------------
 
-def assign_batches(manifest_path, patterns, gap_threshold, dry_run=False):
+def assign_batches(manifest_path, patterns, gap_threshold, well_drop_threshold, dry_run=False):
     with open(manifest_path, encoding="utf-8") as fh:
         lines = fh.readlines()
     if not lines:
@@ -162,7 +176,7 @@ def assign_batches(manifest_path, patterns, gap_threshold, dry_run=False):
         sys.exit("ERROR: no samples matched any Evosep pattern. Check --patterns file.")
 
     # Compute batches
-    row_to_batch = compute_batches(tagged, gap_threshold)
+    row_to_batch = compute_batches(tagged, gap_threshold, well_drop_threshold)
 
     # Build per-batch summary for reporting
     batch_info = {}   # batch_num → {plate, pat, wells, runs, count}
@@ -175,8 +189,9 @@ def assign_batches(manifest_path, patterns, gap_threshold, dry_run=False):
         batch_info[b]["count"] += 1
 
     # Report
-    print(f"[assign_batches] Manifest      : {manifest_path}")
-    print(f"[assign_batches] Gap threshold  : {gap_threshold}")
+    print(f"[assign_batches] Manifest           : {manifest_path}")
+    print(f"[assign_batches] Gap threshold      : {gap_threshold}")
+    print(f"[assign_batches] Well-drop threshold: {well_drop_threshold}")
     print(f"[assign_batches] Detected {len(batch_info)} batch(es):\n")
     print(f"  {'Batch':>5}  {'Plate':<6}  {'Pattern':<18}  "
           f"{'Run range':>14}  {'Well range':<13}  Samples")
@@ -229,9 +244,14 @@ def parse_args():
     ap.add_argument("--patterns", default=DEFAULT_PATTERNS,
                     help=f"JSON patterns file (default: {DEFAULT_PATTERNS})")
     ap.add_argument("--gap-threshold", type=int, default=None,
-                    help="Override gap_threshold from JSON. Two consecutive runs "
-                         "from the same plate are a new batch when their run-number "
-                         "gap exceeds this value (default: from JSON, typically 20).")
+                    help="Override gap_threshold from JSON (default 20). "
+                         "New batch when run-number gap between consecutive same-plate "
+                         "samples exceeds this value.")
+    ap.add_argument("--well-drop-threshold", type=int, default=None,
+                    help="Override well_drop_threshold from JSON (default 80). "
+                         "Secondary detector: new batch when well position drops by "
+                         "more than this within a contiguous run block "
+                         "(catches H12->A1 back-to-back reloads, drop=95).")
     ap.add_argument("--dry-run", action="store_true",
                     help="Print detected batches without modifying the manifest")
     return ap.parse_args()
@@ -244,11 +264,14 @@ def main():
     if not os.path.isfile(manifest_path):
         sys.exit(f"ERROR: manifest not found: {manifest_path}")
 
-    patterns, gap_threshold = load_config(args.patterns)
+    patterns, gap_threshold, well_drop_threshold = load_config(args.patterns)
     if args.gap_threshold is not None:
         gap_threshold = args.gap_threshold
+    if args.well_drop_threshold is not None:
+        well_drop_threshold = args.well_drop_threshold
 
-    assign_batches(manifest_path, patterns, gap_threshold, dry_run=args.dry_run)
+    assign_batches(manifest_path, patterns, gap_threshold, well_drop_threshold,
+                   dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

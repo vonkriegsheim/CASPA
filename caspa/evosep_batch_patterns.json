@@ -2,7 +2,9 @@
   "_comment": "Evosep batch detection patterns for caspa/assign_batches.py.",
   "_format": "regex applied case-insensitively to sample_id. group_plate, group_well, group_run select capture groups. Patterns tried in order; first match wins.",
   "gap_threshold": 20,
-  "_gap_note": "Two consecutive runs from the same plate are considered a new batch when their run-number gap exceeds this value. Within a session cells are injected sequentially (gap ~1); between sessions (different days/loadings) the gap is typically >50. Default 20 works for standard hexSCP experiments.",
+  "_gap_note": "PRIMARY detector. Two consecutive runs from the same plate are a new batch when their run-number gap exceeds this value. Within a session cells are sequential (gap ~1); between sessions the gap is typically >50. Default 20 works for standard hexSCP experiments.",
+  "well_drop_threshold": 80,
+  "_well_drop_note": "SECONDARY detector. Within an already-contiguous session (run gap < gap_threshold), a new batch is also triggered when the 96-well position drops by more than this value. Catches back-to-back full-plate reloads (H12->A1, drop=95) without splitting test injections (A10->A1, drop=9). Default 80.",
   "patterns": [
     {
       "name": "evosep_standard",
