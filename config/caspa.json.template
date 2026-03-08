@@ -1,0 +1,23 @@
+{
+  "project": {
+    "name": "TODO: MyExperiment",
+    "species_label": "human",
+    "description": "TODO: one-sentence description for LLM annotation context (e.g. 'Single-cell proteomics of pancreatic islets from diabetic and healthy donors')"
+  },
+
+  "input": {
+    "pg_matrix": "TODO: /path/to/report.pg_matrix.tsv",
+    "spectronaut_tsv": null,
+    "sample_sheet": "config/ms_inputs.tsv"
+  },
+
+  "scp": {
+    "custom_proteins": "",
+    "llm": {
+      "api_key": "TODO: your-openai-api-key",
+      "model": "gpt-4o",
+      "base_url": "",
+      "condition_b": false
+    }
+  }
+}

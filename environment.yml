@@ -1,0 +1,31 @@
+name: caspa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - snakemake>=7.0
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - umap-learn
+  - harmonypy
+  - leidenalg
+  - python-igraph
+  - matplotlib
+  - seaborn
+  - openai
+  - directlfq
+  - r-base=4.3
+  - bioconductor-scp
+  - bioconductor-singlecellexperiment
+  - r-data.table
+  - r-matrixstats
+  - r-biocmanager
+  - bioconductor-aucell
+  - bioconductor-gsvabase
+  - bioconductor-msigdbr
+  - r-fgsea
+  - bioconductor-clusterprofiler

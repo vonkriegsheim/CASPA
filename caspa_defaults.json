@@ -1,0 +1,89 @@
+{
+  "__meta": {
+    "file": "caspa_defaults.json",
+    "purpose": "CASPA bundled defaults. Override any key in config/caspa.json — last-wins merge applies."
+  },
+
+  "scp": {
+    "min_protein_ids":    500,
+    "min_cells_per_prot": 5,
+    "joint_embedding": {
+      "n_hvg":             2000,
+      "n_pcs":             20,
+      "n_neighbors":       15,
+      "leiden_resolution": 0.8,
+      "harmony_batch_key": "Batch",
+      "seed":              0
+    },
+    "markers": {
+      "wilcoxon_pval":     0.05,
+      "log2fc_threshold":  0.5,
+      "top_n_per_cluster": 20
+    },
+    "aucell": {
+      "n_top_genes":   50,
+      "genesets":      "msigdb_hallmark"
+    },
+    "exclude_run_regex": "^(library|lib|5cell|10cell|100cell)",
+    "custom_proteins":   "",
+    "llm": {
+      "model":       "gpt-4o",
+      "base_url":    "",
+      "api_key":     "",
+      "condition_b": false
+    }
+  },
+
+  "plots": {
+    "formats":   ["pdf", "png"],
+    "adj_pval":  0.05,
+    "log2fc":    1.0,
+    "volcano": {
+      "top_n_labels": 10,
+      "show_pa":      false
+    },
+    "heatmap": {
+      "top_n":        50,
+      "zscore":       true,
+      "cluster_rows": true,
+      "cluster_cols": false
+    },
+    "dotplot": {
+      "auto_markers_per_group": 10,
+      "selected_genes":         [],
+      "max_groups":             50
+    },
+    "feature_umap": {
+      "enabled": true,
+      "zscore":  false
+    }
+  },
+
+  "enrichment": {
+    "gsea": {
+      "enabled":             true,
+      "genesets":            ["hallmark"],
+      "max_terms":           15,
+      "simplify_redundancy": true,
+      "min_size":            10,
+      "max_size":            500,
+      "n_perm":              1000,
+      "seed":                42
+    },
+    "go": {
+      "enabled":             true,
+      "ontology":            "BP",
+      "pval_cutoff":         0.05,
+      "qval_cutoff":         0.2,
+      "max_terms":           15,
+      "simplify_redundancy": true
+    },
+    "gsva": {
+      "enabled":   true,
+      "method":    "ssgsea",
+      "genesets":  "msigdb_hallmark",
+      "max_terms": 25,
+      "min_size":  10
+    }
+  }
+}
