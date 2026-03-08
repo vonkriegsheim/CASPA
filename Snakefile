@@ -342,11 +342,14 @@ rule scp_llm_annotation:
         model       = _c("scp", "llm", "model", default="gpt-4o"),
         base_url    = _c("scp", "llm", "base_url", default=""),
         api_key     = _c("scp", "llm", "api_key", default=""),
-        condition_b = _c("scp", "llm", "condition_b", default=False),
+        condition_b      = _c("scp", "llm", "condition_b",     default=False),
+        provider         = _c("scp", "llm", "provider",         default="openai"),
+        thinking_budget  = _c("scp", "llm", "thinking_budget",  default=0),
     run:
         if params.api_key:
             os.environ["ELM_API_KEY"] = params.api_key
-        cond_b_flag = " --condition-b" if params.condition_b else ""
+        cond_b_flag    = " --condition-b" if params.condition_b else ""
+        thinking_flag  = f" --thinking-budget {params.thinking_budget}" if params.thinking_budget else ""
         shell(
             f"python {PY}/annotate_clusters_llm.py"
             f" --prompt-md    {{input.prompt}}"
@@ -357,8 +360,10 @@ rule scp_llm_annotation:
             f" --experiment-context \"{{params.context}}\""
             f" --model        {{params.model}}"
             f" --base-url     \"{{params.base_url}}\""
+            f" --provider     {{params.provider}}"
             f" --out-dir      scp/llm"
             f"{cond_b_flag}"
+            f"{thinking_flag}"
         )
 
 rule scp_llm_umap:
