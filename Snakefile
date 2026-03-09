@@ -345,6 +345,7 @@ rule scp_llm_annotation:
         condition_b      = _c("scp", "llm", "condition_b",     default=False),
         provider         = _c("scp", "llm", "provider",         default="openai"),
         thinking_budget  = _c("scp", "llm", "thinking_budget",  default=0),
+        max_tokens       = _c("scp", "llm", "max_tokens",        default=16000),
     run:
         if params.api_key:
             os.environ["ELM_API_KEY"] = params.api_key
@@ -361,6 +362,7 @@ rule scp_llm_annotation:
             f" --model        {{params.model}}"
             f" --base-url     \"{{params.base_url}}\""
             f" --provider     {{params.provider}}"
+            f" --max-tokens   {{params.max_tokens}}"
             f" --out-dir      scp/llm"
             f"{cond_b_flag}"
             f"{thinking_flag}"

@@ -763,6 +763,13 @@ def main():
             print("Using default OpenAI endpoint (api.openai.com)")
             client = OpenAI(api_key=api_key)
 
+    # Guard: when thinking is enabled max_tokens must exceed the budget;
+    # bump silently so the Anthropic API doesn't reject the call.
+    if args.thinking_budget > 0 and args.max_tokens <= args.thinking_budget:
+        args.max_tokens = args.thinking_budget + 4096
+        print(f"INFO: max_tokens bumped to {args.max_tokens} "
+              f"(thinking_budget={args.thinking_budget} + 4096 output headroom)")
+
     out_dir = Path(args.out_dir) if args.out_dir else Path(args.out_tsv).parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
