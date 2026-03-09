@@ -15,7 +15,7 @@
     "custom_proteins": "",
     "llm": {
       "api_key": "TODO: your-openai-api-key",
-      "model": "gpt-4o",
+      "model": "gpt-5.2",
       "base_url": "",
       "condition_b": false
     }
