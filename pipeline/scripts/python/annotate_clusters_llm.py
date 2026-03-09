@@ -770,6 +770,8 @@ def main():
     n_clusters = prompt_text.count("## Cluster")
     print(f"Loaded prompt: {n_clusters} clusters, {len(prompt_text):,} chars")
 
+    round0_text = ""  # populated below if condition_b; used in Pass 2 preamble
+
     # ---- Condition B: Round 0 + generic amendments ----
     if args.condition_b:
         context = _extract_experiment_context(prompt_text)
@@ -953,12 +955,27 @@ def main():
         "Do not include any preamble before the table."
     )
 
+    # Condition B: re-surface R0 constraints at the front of Pass 2 so they are
+    # not lost in the middle of the ~50 KB re-sent cluster prompt (primacy effect).
+    r0_preamble = ""
+    if args.condition_b and round0_text:
+        r0_preamble = (
+            "## Key constraints for revision (Round 0 — read before interpreting supplemental data)\n\n"
+            "These constraints were generated from the experiment context alone, before any "
+            "cluster data was seen. Apply them when deciding whether supplemental detection "
+            "rates change any annotation:\n\n"
+            + round0_text
+            + "\n\n---\n\n"
+        )
+
     pass2_user = (
+        f"{r0_preamble}"
         f"Here is my original cluster data:\n\n{context_block}{prompt_text}"
         f"{supplemental_text}\n\n"
         f"Your pass 1 annotations were:\n{text_p1}\n\n"
         "Please now provide your refined annotation and recommended marker panel."
     ) if supplemental_text else (
+        f"{r0_preamble}"
         f"Here is my original cluster data:\n\n{context_block}{prompt_text}\n\n"
         f"Your pass 1 annotations were:\n{text_p1}\n\n"
         "No additional markers could be retrieved from the pivot. "
