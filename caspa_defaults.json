@@ -32,7 +32,8 @@
       "api_key":         "",
       "condition_b":     false,
       "provider":        "openai",
-      "thinking_budget": 0
+      "thinking_budget": 0,
+      "max_tokens":      16000
     }
   },
 
