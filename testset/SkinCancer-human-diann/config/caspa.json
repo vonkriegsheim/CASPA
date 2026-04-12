@@ -12,7 +12,7 @@
   "scp": {
     "custom_proteins": "",
     "llm": {
-      "api_key": "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",
+      "api_key": "",
       "model": "gpt-5.2",
       "base_url": "",
       "condition_b": true,

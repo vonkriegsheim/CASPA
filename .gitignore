@@ -1,0 +1,23 @@
+# Machine-local / user configs — may contain API keys, never commit
+testset/**/config/caspa.json
+caspa.json
+
+# Data directories
+testset/**/*.tsv
+testset/**/*.parquet
+testset/**/*.raw
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
