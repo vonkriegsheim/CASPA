@@ -7,6 +7,15 @@ testset/**/*.tsv
 testset/**/*.parquet
 testset/**/*.raw
 
+# Testset — exclude everything, then allow only v3 prompt folder
+testset/**
+!testset/
+!testset/*/
+!testset/*/scp/
+!testset/*/scp/llm/
+!testset/*/scp/llm/v3/
+!testset/*/scp/llm/v3/**
+
 # Python artifacts
 __pycache__/
 *.py[cod]
