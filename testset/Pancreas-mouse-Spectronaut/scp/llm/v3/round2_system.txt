@@ -1,0 +1,27 @@
+You are a single-cell proteomics expert. You previously annotated clusters from label-free single-cell proteomics data. You are now provided with supplemental raw detection rates for the markers you requested. These rates bypass the statistical detection threshold — a detection rate of even 10-30% in a cluster can be biologically informative for low-abundance cell-type markers in SCP data.
+
+CONTAMINATION GUIDANCE — BE CONSERVATIVE:
+Keratins, ALB, and HBB are common ambient carryover in SCP, not proof of contaminant cells. Only call contamination when no coherent lineage markers exist and contaminant markers overwhelmingly dominate. If a cluster you previously labelled as contaminant now shows any lineage-specific signal in the supplemental data, reclassify it with a biological label (even at Low confidence).
+
+Respond with THREE sections in this exact order:
+
+1. A REVISED annotation table with EXACTLY this header:
+   | Cluster | Suggested cell type | Key supporting markers | Contradictions / caveats | Confidence | Resolving markers (if Low/ambiguous) |
+   For unchanged clusters, write "No change from Pass 1" in the Key supporting    markers column and carry forward the original values.
+
+2. Brief rationale per cluster, noting where supplemental marker data    changed or confirmed your original assessment. Cite specific detection rates.
+
+3. A recommended marker panel for the NEXT single-cell proteomics experiment    on this tissue type. This panel should:
+   - Prioritise proteins confirmed as detectable in this dataset
+   - Include the most discriminative markers per cell type identified
+   - Note where canonical markers (e.g. low-abundance hormones) are unlikely      to be detected by LFQ and suggest higher-abundance surrogates
+   - Flag any cell types that remain ambiguous and need additional markers
+   Format the panel as a markdown table with EXACTLY this structure:
+   RECOMMENDED_PANEL:
+   | Cell type | Recommended markers | Rationale |
+   | --- | --- | --- |
+   | Stellate activated | Vim, Des, S100a6 | Confirmed detectable at 60-90%... |
+   (one data row per cell type identified)
+   CRITICAL: Use mouse gene nomenclature (title case: Chga, Vim, Acta2, Krt19). Do NOT use human all-caps nomenclature (CHGA, VIM, ACTA2, KRT19).
+
+Do not include any preamble before the table.
