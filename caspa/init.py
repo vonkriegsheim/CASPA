@@ -106,15 +106,25 @@ def main():
         pg_abs = os.path.abspath(args.pg_matrix)
         cfg["input"]["pg_matrix"] = pg_abs
         cfg["input"]["spectronaut_tsv"] = None
-        # Auto-populate sample sheet from pg_matrix headers
-        try:
-            samples = infer_sample_ids_from_pg_matrix(pg_abs)
-            sheet_content = build_sample_sheet(samples)
-            print(f"[caspa init] Detected {len(samples)} sample columns from pg_matrix header")
-        except Exception as e:
-            print(f"[caspa init] Warning: could not read pg_matrix header ({e}). "
-                  "Writing empty sample sheet — fill it in manually.")
-            sheet_content = SAMPLE_SHEET_HEADER
+        # If a ready-made sample sheet sits next to the pg_matrix (e.g. a bundled
+        # testset with known batches), use it verbatim so the experiment is
+        # reproducible. Otherwise auto-populate from the pg_matrix header (batch=1).
+        sibling_sheet = os.path.join(os.path.dirname(pg_abs), "ms_inputs.tsv")
+        if os.path.isfile(sibling_sheet):
+            with open(sibling_sheet, encoding="utf-8") as fh:
+                sheet_content = fh.read()
+            n_rows = max(0, len(sheet_content.splitlines()) - 1)
+            print(f"[caspa init] Using bundled sample sheet (with batches): "
+                  f"{sibling_sheet} ({n_rows} samples)")
+        else:
+            try:
+                samples = infer_sample_ids_from_pg_matrix(pg_abs)
+                sheet_content = build_sample_sheet(samples)
+                print(f"[caspa init] Detected {len(samples)} sample columns from pg_matrix header")
+            except Exception as e:
+                print(f"[caspa init] Warning: could not read pg_matrix header ({e}). "
+                      "Writing empty sample sheet — fill it in manually.")
+                sheet_content = SAMPLE_SHEET_HEADER
     else:
         cfg["input"]["pg_matrix"] = "TODO: /path/to/report.pg_matrix.tsv"
         cfg["input"]["spectronaut_tsv"] = os.path.abspath(args.spectronaut_tsv)
