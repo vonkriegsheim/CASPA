@@ -1,0 +1,25 @@
+# CASPA — Windows Python dependencies
+#
+# bioconda has no win-64 builds for the R/Bioconductor stack, so the conda
+# environment.yml cannot be solved on Windows. Install Python here with pip into
+# the miniforge base env, and install R separately from CRAN, then run
+# pipeline/scripts/R/install_r_packages.R.
+#
+#   pip install -r requirements-windows.txt
+#
+snakemake
+directlfq
+umap-learn
+scanpy
+harmonypy==0.0.10   # 2.x is a compiled BLAS/Armadillo build that needs a C++ toolchain on Windows
+leidenalg
+igraph
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+adjustText
+openai
+anthropic           # optional: only used when scp.llm.provider = "claude"

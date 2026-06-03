@@ -349,6 +349,14 @@ rule scp_llm_annotation:
     run:
         if params.api_key:
             os.environ["ELM_API_KEY"] = params.api_key
+        # Write the experiment context to a file rather than passing it as a shell
+        # argument. A description containing quotes or non-ASCII characters would
+        # otherwise break shell arg-parsing and silently drop the --model argument
+        # (downgrading the model to gpt-4-turbo without warning).
+        ctx_file = "scp/llm/_experiment_context.txt"
+        os.makedirs("scp/llm", exist_ok=True)
+        with open(ctx_file, "w", encoding="utf-8") as _fh:
+            _fh.write(params.context or "")
         cond_b_flag    = " --condition-b" if params.condition_b else ""
         thinking_flag  = f" --thinking-budget {params.thinking_budget}" if params.thinking_budget else ""
         shell(
@@ -358,7 +366,7 @@ rule scp_llm_annotation:
             f" --annotation   {{input.annotation}}"
             f" --out-tsv      {{output.annotations}}"
             f" --species      {{params.species}}"
-            f" --experiment-context \"{{params.context}}\""
+            f" --experiment-context-file {ctx_file}"
             f" --model        {{params.model}}"
             f" --base-url     \"{{params.base_url}}\""
             f" --provider     {{params.provider}}"

@@ -656,8 +656,10 @@ def main():
                     help="scp_pivot.tsv — used for sub-threshold marker lookup")
     ap.add_argument("--annotation",   required=True,
                     help="scp_annotation.tsv — Run/Condition mapping")
-    ap.add_argument("--model",        default="gpt-4-turbo",
-                    help="Model name as exposed by ELM (default: gpt-4-turbo)")
+    ap.add_argument("--model",        default=None,
+                    help="Model name (e.g. gpt-5.2, gpt-4o, claude-3-5-sonnet). "
+                         "If omitted, falls back to gpt-4-turbo WITH A WARNING so a "
+                         "dropped argument never silently downgrades the model.")
     ap.add_argument("--base-url",     default="",
                     help="ELM API base URL. Can also be set via ELM_BASE_URL env var. "
                          "Try https://elm.edina.ac.uk/ or https://elm.edina.ac.uk/v1")
@@ -668,6 +670,10 @@ def main():
                     help="Species for gene nomenclature (human=all-caps, mouse=title-case)")
     ap.add_argument("--experiment-context", default=None,
                     help="Free-text description of the experiment to inform marker selection. E.g. 'Murine pancreas, 2-day caerulein pancreatitis, single-cell LFQ proteomics (Bruker timsTOF)'. Injected into both LLM system prompts.")
+    ap.add_argument("--experiment-context-file", default=None,
+                    help="Path to a file containing the experiment context. Preferred over "
+                         "--experiment-context: avoids shell-quoting breakage when the text "
+                         "contains quotes or non-ASCII characters. Takes precedence if set.")
     ap.add_argument("--out-markers-txt", default=None,
                     help="Path for flat gene list from recommended panel "
                          "(one gene per line, for --proteins in plot_umap_overlays.py). "
@@ -688,6 +694,25 @@ def main():
                          "plus a Round 0 blind context reasoning call into the prompt "
                          "before annotation. Round 0 uses the same model and API key.")
     args = ap.parse_args()
+
+    # Loud model fallback: a missing/dropped --model must never silently
+    # downgrade the run. This previously happened when an upstream shell command
+    # mis-parsed because --experiment-context contained quotes/non-ASCII, eating
+    # the --model argument and defaulting to gpt-4-turbo without any warning.
+    if not args.model:
+        print("WARNING: no --model provided; defaulting to 'gpt-4-turbo'. If you "
+              "expected a different model, an upstream argument may have been dropped.",
+              file=sys.stderr)
+        args.model = "gpt-4-turbo"
+
+    # Prefer the context FILE over the inline arg (shell-quoting-safe).
+    if args.experiment_context_file:
+        try:
+            args.experiment_context = Path(args.experiment_context_file).read_text(
+                encoding="utf-8").strip()
+        except OSError as e:
+            print(f"WARNING: could not read --experiment-context-file "
+                  f"'{args.experiment_context_file}': {e}", file=sys.stderr)
 
     if args.provider == "claude":
         api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()

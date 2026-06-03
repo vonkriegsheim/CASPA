@@ -1,3 +1,9 @@
+# ==============================================================================
+# LINUX / macOS install path. bioconda has no win-64 builds for the Bioconductor
+# stack below, so this file CANNOT be solved on Windows.
+#   Windows users: install Python via miniforge + requirements-windows.txt, and R
+#   from CRAN, then run pipeline/scripts/R/install_r_packages.R. See README.
+# ==============================================================================
 name: caspa
 channels:
   - conda-forge
@@ -11,21 +17,34 @@ dependencies:
   - scipy
   - scikit-learn
   - umap-learn
-  - harmonypy
+  - scanpy            # REQUIRED: imported by scp_joint_embedding_leiden.py & plot_umap_overlays.py
+  - harmonypy=0.0.10  # pin: 2.x is a compiled BLAS/Armadillo package; 0.0.x is the tested API
   - leidenalg
   - python-igraph
   - matplotlib
   - seaborn
+  - adjusttext        # optional: nicer volcano label placement
   - openai
+  - anthropic         # optional: only used when scp.llm.provider = "claude"
   - directlfq
   - r-base=4.3
+  - r-biocmanager
   - bioconductor-scp
   - bioconductor-singlecellexperiment
-  - r-data.table
-  - r-matrixstats
-  - r-biocmanager
   - bioconductor-aucell
+  - bioconductor-clusterprofiler
+  - bioconductor-ihw          # scp Imports this; install it explicitly so scp can load
+  - bioconductor-annotationdbi
+  - bioconductor-s4vectors
+  - bioconductor-org.hs.eg.db
+  - bioconductor-org.mm.eg.db
   - bioconductor-gsvabase
   - bioconductor-msigdbr
   - r-fgsea
-  - bioconductor-clusterprofiler
+  - r-data.table
+  - r-matrixstats
+  - r-optparse
+  - r-pheatmap
+  - r-uwot
+  - r-ggplot2
+  - r-igraph
