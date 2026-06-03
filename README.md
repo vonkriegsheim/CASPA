@@ -10,9 +10,33 @@ long-format TSV. No bulk pipeline dependency.
 
 ### 1. Install
 
+CASPA needs a Python stack **and** an R/Bioconductor stack.
+
+**Linux / macOS** — one conda environment has everything:
+
 ```bash
-conda env create -f environment.yml
+bash install_unix.sh          # conda env create -f environment.yml + verify
 conda activate caspa
+```
+
+**Windows** — bioconda has no win-64 Bioconductor builds, so install Python with
+pip (miniforge) and R from CRAN. After installing
+[miniforge](https://github.com/conda-forge/miniforge/releases) and
+[R](https://cran.r-project.org/bin/windows/base/), from a PowerShell prompt:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install_windows.ps1
+```
+
+That runs `pip install -r requirements-windows.txt`, installs the R packages via
+`pipeline/scripts/R/install_r_packages.R`, and verifies the result. At run time
+ensure `python`, `snakemake`, and `Rscript` are on PATH — the installer prints
+the exact directories to add.
+
+**Verify any install** (Python pkgs, R pkgs, and PATH resolution):
+
+```bash
+python caspa/doctor.py
 ```
 
 ### 2. Scaffold a new experiment
