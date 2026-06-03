@@ -26,7 +26,6 @@ dependencies:
   - adjusttext        # optional: nicer volcano label placement
   - openai
   - anthropic         # optional: only used when scp.llm.provider = "claude"
-  - directlfq
   - r-base=4.5          # R 4.5 / Bioconductor 3.21 — the combination CASPA is tested against
   - r-biocmanager
   - bioconductor-scp
@@ -38,9 +37,9 @@ dependencies:
   - bioconductor-s4vectors
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
-  - bioconductor-gsvabase
-  - bioconductor-msigdbr
-  - r-fgsea
+  - bioconductor-gseabase    # GSEABase (AUCell dep); the old 'gsvabase' name does not exist on bioconda
+  - r-msigdbr                # msigdbr is a CRAN package, not Bioconductor
+  - bioconductor-fgsea       # fgsea is Bioconductor (the old 'r-fgsea' name does not exist)
   - r-data.table
   - r-matrixstats
   - r-optparse
@@ -48,3 +47,6 @@ dependencies:
   - r-uwot
   - r-ggplot2
   - r-igraph
+  - pip
+  - pip:
+      - directlfq     # PyPI-only (not packaged on conda); pulls numba/pyarrow
