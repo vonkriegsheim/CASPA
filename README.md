@@ -40,7 +40,16 @@ python caspa/doctor.py
 ```
 
 **Docker** — no local install at all (good for Windows via Docker Desktop/WSL2,
-and for reproducibility). The image bundles the full Python + R stack:
+and for reproducibility). The image bundles the full Python + R stack.
+
+Pull the prebuilt image (nothing to build):
+
+```bash
+docker run --rm -v /host/MyExperiment:/work \
+  ghcr.io/vonkriegsheim/caspa --workdir /work --cores 8
+```
+
+…or build it yourself:
 
 ```bash
 docker build -t caspa .

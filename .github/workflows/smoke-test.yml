@@ -51,13 +51,25 @@ jobs:
           test -s "$RUNNER_TEMP/nt/scp/scplainer/scplainer_variance_explained.tsv"
           echo "Smoke test passed."
 
-  docker-build:
-    name: Build Docker image
+  docker:
+    name: Build image and publish to GHCR
+    needs: conda-smoke          # only build/publish once the smoke test is green
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'   # heavy; skip on PRs
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Build image (also runs caspa doctor in the build)
-        run: docker build -t caspa:ci .
-      - name: Smoke-run inside the image
-        run: docker run --rm --entrypoint python caspa:ci caspa/doctor.py
+      - name: Build image (runs caspa doctor during build)
+        run: |
+          IMAGE=$(echo "ghcr.io/${{ github.repository_owner }}/caspa" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
+      - name: Smoke-run caspa doctor inside the image
+        run: docker run --rm --entrypoint python "$IMAGE:latest" caspa/doctor.py
+      - name: Publish to GHCR (pushes to main only)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
