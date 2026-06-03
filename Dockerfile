@@ -2,6 +2,8 @@
 #
 #   docker build -t caspa .
 #   docker run --rm -v /host/MyExperiment:/work caspa --workdir /work --cores 8
+#   docker run --rm -p 8501:8501 caspa gui        # the setup GUI at http://localhost:8501
+#   docker run --rm caspa doctor                  # verify the install
 #
 # On Linux bioconda provides everything, so the image is just the conda
 # environment from environment.yml. Windows users can run CASPA this way via
@@ -26,5 +28,6 @@ COPY . .
 # Fail the build if any dependency is missing.
 RUN python caspa/doctor.py
 
-ENTRYPOINT ["python", "caspa/run.py"]
+RUN chmod +x /opt/caspa/docker-entrypoint.sh
+ENTRYPOINT ["/opt/caspa/docker-entrypoint.sh"]
 CMD ["--help"]

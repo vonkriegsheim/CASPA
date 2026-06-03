@@ -45,8 +45,15 @@ and for reproducibility). The image bundles the full Python + R stack.
 Pull the prebuilt image (nothing to build):
 
 ```bash
+# run the pipeline
 docker run --rm -v /host/MyExperiment:/work \
   ghcr.io/vonkriegsheim/caspa --workdir /work --cores 8
+
+# …or launch the setup GUI at http://localhost:8501
+docker run --rm -p 8501:8501 ghcr.io/vonkriegsheim/caspa gui
+
+# …or check the install
+docker run --rm ghcr.io/vonkriegsheim/caspa doctor
 ```
 
 …or build it yourself:
