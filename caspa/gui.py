@@ -195,7 +195,7 @@ else:
                        "`batch` column directly (use `1` for everything if no batches).")
 
     edited = st.data_editor(
-        st.session_state.sheet, num_rows="fixed", use_container_width=True, height=320,
+        st.session_state.sheet, num_rows="fixed", width="stretch", height=320,
         column_config={
             "sample_id": st.column_config.TextColumn("sample_id", disabled=True),
             "sample_file": st.column_config.TextColumn("sample_file", disabled=True),
