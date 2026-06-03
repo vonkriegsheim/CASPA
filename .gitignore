@@ -18,6 +18,12 @@ testset/**
 !testset/*/data/
 !testset/*/data/**
 
+# Pipeline run artifacts — never commit, even if a workdir lands inside testset/
+**/.snakemake/
+testset/*/data/scp/
+testset/*/data/config/
+testset/*/data/caspa_input/
+
 # Python artifacts
 __pycache__/
 *.py[cod]
