@@ -61,6 +61,20 @@ docker run --rm -v /host/MyExperiment:/work caspa --workdir /work --cores 8
 > Newer R (e.g. 4.6 / Bioc 3.23) works, but a few packages have no prebuilt
 > Windows binary yet and are installed from source by `install_r_packages.R`.
 
+### GUI (optional)
+
+Prefer a form to hand-editing JSON? Launch the setup GUI:
+
+```bash
+python caspa/gui.py          # opens in your browser (re-launches via Streamlit)
+```
+
+It builds `config/caspa.json` + `config/ms_inputs.tsv` for a workdir: point it at
+your pg_matrix, describe the experiment (condition / FACS context for the LLM),
+auto-detect or hand-edit batches in a grid, set parameters and the API key, then
+click **Generate**. Needs `streamlit` (bundled in the conda env / Docker image;
+`pip install streamlit` otherwise).
+
 ### 2. Scaffold a new experiment
 
 ```bash

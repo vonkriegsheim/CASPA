@@ -26,6 +26,7 @@ dependencies:
   - adjusttext        # optional: nicer volcano label placement
   - openai
   - anthropic         # optional: only used when scp.llm.provider = "claude"
+  - streamlit         # optional: GUI front-end (caspa/gui.py)
   - r-base=4.5          # R 4.5 / Bioconductor 3.21 — the combination CASPA is tested against
   - r-biocmanager
   - bioconductor-scp

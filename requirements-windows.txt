@@ -23,3 +23,4 @@ seaborn
 adjustText
 openai
 anthropic           # optional: only used when scp.llm.provider = "claude"
+streamlit           # optional: only needed for the GUI (caspa/gui.py)
