@@ -172,6 +172,9 @@ rule scp_joint_embedding:
         n_neighbors = _c("scp", "joint_embedding", "n_neighbors",       default=15),
         resolution  = _c("scp", "joint_embedding", "leiden_resolution", default=0.8),
         seed        = _c("scp", "joint_embedding", "seed",              default=0),
+        h_theta     = _c("scp", "joint_embedding", "harmony_theta",          default=2.0),
+        h_theta_max = _c("scp", "joint_embedding", "harmony_theta_max",      default=5.0),
+        h_entropy   = _c("scp", "joint_embedding", "harmony_entropy_target", default=0.6),
     shell:
         "python {PY}/scp_joint_embedding_leiden.py"
         " --pg-matrix         {input.pg_matrix}"
@@ -182,6 +185,9 @@ rule scp_joint_embedding:
         " --n_neighbors       {params.n_neighbors}"
         " --leiden_resolution {params.resolution}"
         " --seed              {params.seed}"
+        " --harmony_theta            {params.h_theta}"
+        " --harmony_theta_max        {params.h_theta_max}"
+        " --harmony_entropy_target   {params.h_entropy}"
 
 rule scp_detection_markers:
     input:

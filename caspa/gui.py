@@ -54,6 +54,22 @@ import assign_batches as caspa_batches          # noqa: E402
 
 DEFAULTS_PATH = os.path.join(os.path.dirname(HERE), "caspa_defaults.json")
 
+# LLM services. Gemini and DeepSeek expose OpenAI-compatible APIs, so they ride
+# the existing provider="openai" code path with just a base_url + model.
+LLM_SERVICES = {
+    "OpenAI":                     dict(provider="openai", base_url="",
+                                       model="gpt-5.2"),
+    "Anthropic (Claude)":         dict(provider="claude", base_url="",
+                                       model="claude-sonnet-4-6"),
+    "Google Gemini":              dict(provider="openai",
+                                       base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                                       model="gemini-2.5-pro"),
+    "DeepSeek":                   dict(provider="openai",
+                                       base_url="https://api.deepseek.com",
+                                       model="deepseek-chat"),
+    "Custom (OpenAI-compatible)": dict(provider="openai", base_url="", model=""),
+}
+
 
 def load_defaults() -> dict:
     try:
@@ -101,6 +117,47 @@ def detect_evosep_batches(sample_ids):
     return out, n_batches, unmatched
 
 
+def native_pick(kind="file"):
+    """Open an OS file/folder dialog and return the chosen path ('' if cancelled
+    or unavailable). Works for the local-desktop use case; no-ops headless."""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.wm_attributes("-topmost", 1)
+        if kind == "dir":
+            path = filedialog.askdirectory(parent=root)
+        else:
+            path = filedialog.askopenfilename(
+                parent=root,
+                filetypes=[("Protein matrix / TSV", "*.tsv *.txt *.csv"), ("All files", "*.*")])
+        root.destroy()
+        return os.path.normpath(path) if path else ""
+    except Exception:
+        st.session_state["_browse_unavailable"] = True
+        return ""
+
+
+def _browse(state_key, kind="file"):
+    """on_click callback: open a dialog and write the result into session_state."""
+    p = native_pick(kind)
+    if p:
+        st.session_state[state_key] = p
+        if state_key == "data_path":            # default the workdir to the data folder
+            st.session_state["workdir"] = os.path.dirname(p)
+
+
+def num_field(label, default, key, cast=float, help=None):
+    """A plain text box for a number (no +/- steppers). Falls back to default."""
+    raw = st.text_input(label, value=str(default), key=key, help=help)
+    try:
+        return cast(raw)
+    except (TypeError, ValueError):
+        st.caption(f"⚠️ '{raw}' isn't a number — using {default}.")
+        return cast(default)
+
+
 def write_experiment(workdir, project, input_block, scp_block, sheet_df):
     """Write config/caspa.json + config/ms_inputs.tsv into the workdir."""
     cfg_dir = os.path.join(workdir, "config")
@@ -119,6 +176,13 @@ st.set_page_config(page_title="CASPA experiment setup", page_icon="🧫", layout
 D = load_defaults()
 emb = D.get("scp", {}).get("joint_embedding", {})
 
+# session defaults
+for k, v in {"data_path": "", "workdir": "",
+             "llm_service": "OpenAI",
+             "llm_model": LLM_SERVICES["OpenAI"]["model"],
+             "llm_base_url": LLM_SERVICES["OpenAI"]["base_url"]}.items():
+    st.session_state.setdefault(k, v)
+
 st.title("🧫 CASPA — experiment setup")
 st.caption("Build `config/caspa.json` + `config/ms_inputs.tsv` for a run. "
            "No coding required — fill in the form and click *Generate*.")
@@ -127,16 +191,23 @@ st.caption("Build `config/caspa.json` + `config/ms_inputs.tsv` for a run. "
 st.header("1 · Input data")
 input_kind = st.radio("Input type", ["DIA-NN / FragPipe pg_matrix", "Spectronaut long-format TSV"],
                       horizontal=True)
-data_path = st.text_input("Path to the input file",
-                          placeholder=r"D:\data\report.pg_matrix.tsv")
 is_spectronaut = input_kind.startswith("Spectronaut")
+pc1, pc2 = st.columns([5, 1])
+with pc1:
+    st.text_input("Path to the input file", key="data_path",
+                  placeholder=r"D:\data\report.pg_matrix.tsv")
+with pc2:
+    st.write("")
+    st.button("📂 Browse…", on_click=_browse, args=("data_path", "file"),
+              use_container_width=True)
+if st.session_state.get("_browse_unavailable"):
+    st.caption("File dialog unavailable in this environment — type/paste the path instead.")
 
+data_path = st.session_state.get("data_path", "")
 if st.button("Load samples", type="primary", disabled=not data_path):
     if not os.path.isfile(data_path):
         st.error(f"File not found: {data_path}")
     elif is_spectronaut:
-        # Spectronaut is converted to a pg_matrix by the pipeline at run time;
-        # the sample sheet is filled in after conversion. Keep it minimal here.
         st.session_state.sheet = pd.DataFrame({"sample_id": [], "sample_file": [], "batch": []})
         st.session_state.is_spectronaut = True
         st.info("Spectronaut input recorded. The sample sheet is auto-populated "
@@ -145,6 +216,8 @@ if st.button("Load samples", type="primary", disabled=not data_path):
         try:
             st.session_state.sheet = build_sample_sheet_df(data_path)
             st.session_state.is_spectronaut = False
+            if not st.session_state.get("workdir"):
+                st.session_state["workdir"] = os.path.dirname(os.path.abspath(data_path))
             st.success(f"Loaded {len(st.session_state.sheet)} samples from the pg_matrix header.")
         except Exception as e:  # noqa: BLE001
             st.error(f"Could not read pg_matrix header: {e}")
@@ -184,7 +257,7 @@ else:
             st.session_state.batch_msg = (
                 f"Detected {n_b} batch(es)."
                 + (f" {n_un} sample(s) didn't match the Evosep pattern → batch 0 "
-                   "(set these manually)." if n_un else ""))
+                   "(set these by hand)." if n_un else ""))
             st.rerun()
     with b2:
         if st.session_state.get("batch_msg"):
@@ -210,39 +283,67 @@ st.header("4 · Settings")
 with st.expander("Advanced clustering / QC parameters (defaults are sensible)"):
     a1, a2, a3 = st.columns(3)
     with a1:
-        min_prot = st.number_input("Min proteins per cell (QC floor)",
-                                   value=int(D.get("scp", {}).get("min_protein_ids", 400)), step=50)
-        seed = st.number_input("Random seed", value=int(emb.get("seed", 0)), step=1)
+        min_prot = num_field("Min proteins per cell (QC floor)",
+                             int(D.get("scp", {}).get("min_protein_ids", 400)), "f_minprot", int)
+        seed = num_field("Random seed", int(emb.get("seed", 0)), "f_seed", int)
     with a2:
-        n_pcs = st.number_input("PCA components (intensity)", value=int(emb.get("n_pcs", 20)), step=1)
-        n_neighbors = st.number_input("kNN / UMAP neighbours", value=int(emb.get("n_neighbors", 15)), step=1)
+        n_pcs = num_field("PCA components (intensity)", int(emb.get("n_pcs", 20)), "f_npcs", int)
+        n_neighbors = num_field("kNN / UMAP neighbours", int(emb.get("n_neighbors", 15)), "f_nn", int)
     with a3:
-        leiden_res = st.number_input("Leiden resolution", value=float(emb.get("leiden_resolution", 0.8)),
-                                     step=0.1, format="%.2f")
-    st.caption("Adaptive Harmony (Shannon-entropy batch mixing) runs automatically; "
-               "its targets are pipeline defaults.")
+        leiden_res = num_field("Leiden resolution", float(emb.get("leiden_resolution", 0.8)),
+                               "f_leiden", float)
+    st.markdown("**Adaptive Harmony batch correction**")
+    h1, h2, h3 = st.columns(3)
+    with h1:
+        h_entropy = num_field("Shannon batch-mixing target (0–1)",
+                              float(emb.get("harmony_entropy_target", 0.6)), "f_entropy", float,
+                              help="Harmony's diversity penalty is raised until mean batch-mixing "
+                                   "entropy across Leiden clusters reaches this target.")
+    with h2:
+        h_theta = num_field("Harmony θ (start)", float(emb.get("harmony_theta", 2.0)), "f_theta", float)
+    with h3:
+        h_theta_max = num_field("Harmony θ (max)", float(emb.get("harmony_theta_max", 5.0)),
+                                "f_thetamax", float)
 
 # ---- 5. LLM annotation ----------------------------------------------------
 st.header("5 · LLM annotation")
-llm_d = D.get("scp", {}).get("llm", {})
+
+
+def _on_service_change():
+    p = LLM_SERVICES[st.session_state["llm_service"]]
+    st.session_state["llm_model"] = p["model"]
+    st.session_state["llm_base_url"] = p["base_url"]
+
+
 l1, l2 = st.columns(2)
 with l1:
-    provider = st.selectbox("Provider", ["openai", "claude"],
-                            index=0 if llm_d.get("provider", "openai") == "openai" else 1)
-    model = st.text_input("Model", value="gpt-5.2",
-                          help="e.g. gpt-5.2 (recommended), gpt-4o, or a claude-* model.")
+    st.selectbox("Service", list(LLM_SERVICES), key="llm_service", on_change=_on_service_change)
+    st.text_input("Model", key="llm_model",
+                  help="e.g. gpt-5.2 (recommended), claude-sonnet-4-6, gemini-2.5-pro, deepseek-chat.")
 with l2:
     api_key = st.text_input("API key", type="password",
-                            help="Stored only in this workdir's config/caspa.json (which is gitignored). "
-                                 "Leave blank if using Claude Code to submit.")
-    base_url = st.text_input("Custom base URL (optional)", value=llm_d.get("base_url", ""))
+                            help="Stored only in this workdir's config/caspa.json (gitignored). "
+                                 "Use the key for the selected service. Leave blank if submitting "
+                                 "via Claude Code.")
+    st.text_input("Base URL (OpenAI-compatible)", key="llm_base_url",
+                  help="Auto-filled for Gemini / DeepSeek; leave blank for OpenAI / Anthropic.")
 condition_b = st.checkbox("Use 3-round (Round-0 context) annotation",
-                          value=bool(llm_d.get("condition_b", False)))
+                          value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", False)))
+provider = LLM_SERVICES[st.session_state["llm_service"]]["provider"]
+model = st.session_state["llm_model"]
+base_url = st.session_state["llm_base_url"]
 
 # ---- 6. Generate ----------------------------------------------------------
 st.header("6 · Generate workdir")
-workdir = st.text_input("Workdir (where config/ + outputs will live)",
-                        placeholder=r"D:\CASPA_runs\MyExperiment")
+wc1, wc2 = st.columns([5, 1])
+with wc1:
+    st.text_input("Workdir (where config/ + outputs will live)", key="workdir",
+                  placeholder="defaults to the folder of your input file")
+with wc2:
+    st.write("")
+    st.button("📂 Browse…", on_click=_browse, args=("workdir", "dir"),
+              use_container_width=True, key="browse_wd")
+workdir = st.session_state.get("workdir", "")
 
 if st.button("✅ Generate config + sample sheet", type="primary",
              disabled=not (workdir and data_path)):
@@ -257,7 +358,10 @@ if st.button("✅ Generate config + sample sheet", type="primary",
             "min_protein_ids": int(min_prot),
             "custom_proteins": custom_proteins,
             "joint_embedding": {"n_pcs": int(n_pcs), "n_neighbors": int(n_neighbors),
-                                "leiden_resolution": float(leiden_res), "seed": int(seed)},
+                                "leiden_resolution": float(leiden_res), "seed": int(seed),
+                                "harmony_entropy_target": float(h_entropy),
+                                "harmony_theta": float(h_theta),
+                                "harmony_theta_max": float(h_theta_max)},
             "llm": {"provider": provider, "model": model, "api_key": api_key,
                     "base_url": base_url, "condition_b": bool(condition_b)},
         }
@@ -270,7 +374,7 @@ if st.button("✅ Generate config + sample sheet", type="primary",
         st.code(f"{cfg_p}\n{sheet_p}", language="text")
         st.markdown("**Next step — run the pipeline:**")
         st.code(f"python caspa/run.py --workdir \"{os.path.abspath(workdir)}\" --cores 8", language="bash")
-        if not is_spectronaut and sheet is not None and len(sheet) and \
+        if not is_spectronaut and len(sheet) and \
                 len({int(b) for b in sheet["batch"] if int(b) > 0}) <= 1:
             st.info("All samples are in one batch — Harmony batch correction will be skipped.")
     except Exception as e:  # noqa: BLE001
