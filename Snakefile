@@ -339,7 +339,7 @@ rule scp_llm_annotation:
     params:
         species     = _c("project", "species_label", default="human"),
         context     = _c("project", "description", default=""),
-        model       = _c("scp", "llm", "model", default="gpt-4o"),
+        model       = _c("scp", "llm", "model", default="gpt-5.2"),
         base_url    = _c("scp", "llm", "base_url", default=""),
         api_key     = _c("scp", "llm", "api_key", default=""),
         condition_b      = _c("scp", "llm", "condition_b",     default=False),

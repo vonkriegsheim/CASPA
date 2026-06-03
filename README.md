@@ -39,6 +39,19 @@ the exact directories to add.
 python caspa/doctor.py
 ```
 
+**Docker** — no local install at all (good for Windows via Docker Desktop/WSL2,
+and for reproducibility). The image bundles the full Python + R stack:
+
+```bash
+docker build -t caspa .
+docker run --rm -v /host/MyExperiment:/work caspa --workdir /work --cores 8
+```
+
+> **R version note:** the native-R path is tested against **R 4.5.x / Bioconductor
+> 3.21** (what `r-base=4.5` in `environment.yml` and the Docker image pin to).
+> Newer R (e.g. 4.6 / Bioc 3.23) works, but a few packages have no prebuilt
+> Windows binary yet and are installed from source by `install_r_packages.R`.
+
 ### 2. Scaffold a new experiment
 
 ```bash

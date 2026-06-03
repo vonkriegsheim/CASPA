@@ -1,0 +1,63 @@
+name: smoke-test
+
+# End-to-end check that the dependency stack installs and the pipeline runs.
+# Catches missing deps (e.g. a script importing a package not in environment.yml)
+# before a user hits them. The LLM annotation step is NOT exercised (no API key);
+# we run to a non-LLM target that covers the Python and R stacks.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conda-smoke:
+    name: Conda env + Neutrophil smoke test (Linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}   # login shell so the conda env stays activated
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up conda environment from environment.yml
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          environment-file: environment.yml
+          activate-environment: caspa
+
+      - name: caspa doctor (must pass)
+        run: python caspa/doctor.py
+
+      - name: Scaffold the Neutrophil testset
+        run: |
+          python caspa/init.py \
+            --workdir "$RUNNER_TEMP/nt" \
+            --pg-matrix testset/Neutrophil-human/data/pg_matrix.tsv \
+            --species human --name CI-smoke
+
+      - name: Run pipeline to a non-LLM target (Python + R stacks)
+        run: |
+          python caspa/run.py \
+            --workdir "$RUNNER_TEMP/nt" --cores 2 \
+            --target scp/scplainer/scplainer_variance_explained.tsv
+
+      - name: Assert key outputs exist
+        run: |
+          test -s "$RUNNER_TEMP/nt/scp/qc/filtered.pg_matrix.tsv"
+          test -s "$RUNNER_TEMP/nt/scp/clustering/scp_cluster_assignments.tsv"
+          test -s "$RUNNER_TEMP/nt/scp/scplainer/scplainer_variance_explained.tsv"
+          echo "Smoke test passed."
+
+  docker-build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'   # heavy; skip on PRs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (also runs caspa doctor in the build)
+        run: docker build -t caspa:ci .
+      - name: Smoke-run inside the image
+        run: docker run --rm --entrypoint python caspa:ci caspa/doctor.py

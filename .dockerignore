@@ -1,0 +1,9 @@
+.git
+.github
+*.log
+_*.log
+_install_caspa_r.R
+**/__pycache__/
+*.pyc
+*.pyo
+config/caspa.json

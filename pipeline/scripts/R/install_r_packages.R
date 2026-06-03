@@ -8,6 +8,11 @@
 # Bioconductor ships Windows binaries via BiocManager even though bioconda does
 # not — so native R + this script is the supported Windows route.
 #
+# RECOMMENDED: R 4.5.x (Bioconductor 3.21) — the combination CASPA is tested
+# against. On newer R (e.g. 4.6 / Bioc 3.23) some packages have no prebuilt
+# binary yet (IHW, org.Hs.eg.db); this script falls back to a source install,
+# which works for those pure-R/data packages but is slower.
+#
 # The package list is derived from the library() calls in
 # pipeline/scripts/R/*.R, plus a few transitive deps that the newest R/Bioc
 # combinations fail to auto-install (notably IHW, which `scp` Imports, and its
