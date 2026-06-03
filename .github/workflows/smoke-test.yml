@@ -65,8 +65,22 @@ jobs:
           IMAGE=$(echo "ghcr.io/${{ github.repository_owner }}/caspa" | tr '[:upper:]' '[:lower:]')
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
           docker build -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
-      - name: Smoke-run caspa doctor inside the image
-        run: docker run --rm --entrypoint python "$IMAGE:latest" caspa/doctor.py
+      - name: Smoke-test entrypoint modes (doctor, default, gui)
+        run: |
+          echo "== doctor =="
+          docker run --rm "$IMAGE:latest" doctor
+          echo "== default (pipeline runner) prints help =="
+          docker run --rm "$IMAGE:latest" --help | head -3
+          echo "== gui boots and serves =="
+          docker run -d --rm -p 8501:8501 --name caspa-gui "$IMAGE:latest" gui
+          ok=
+          for _ in $(seq 1 40); do
+            if curl -sf http://localhost:8501/_stcore/health >/dev/null; then ok=1; break; fi
+            sleep 2
+          done
+          docker logs caspa-gui 2>&1 | tail -15 || true
+          docker stop caspa-gui >/dev/null 2>&1 || true
+          if [ -n "$ok" ]; then echo "GUI served OK"; else echo "GUI did not come up"; exit 1; fi
       - name: Publish to GHCR (pushes to main only)
         if: github.event_name != 'pull_request'
         run: |
