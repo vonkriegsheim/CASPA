@@ -329,6 +329,13 @@ with l2:
                   help="Auto-filled for Gemini / DeepSeek; leave blank for OpenAI / Anthropic.")
 condition_b = st.checkbox("Use 3-round (Round-0 context) annotation",
                           value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", False)))
+with st.expander("Advanced LLM options"):
+    max_tokens = num_field(
+        "Max output tokens",
+        int(D.get("scp", {}).get("llm", {}).get("max_tokens", 16000)), "f_maxtok", int,
+        help="Cap on the annotation output. Auto-reduced to the model's own limit if that's "
+             "lower (e.g. DeepSeek 8192), and a run warns if output is truncated — raise this "
+             "only if you see such a warning.")
 provider = LLM_SERVICES[st.session_state["llm_service"]]["provider"]
 model = st.session_state["llm_model"]
 base_url = st.session_state["llm_base_url"]
@@ -363,7 +370,8 @@ if st.button("✅ Generate config + sample sheet", type="primary",
                                 "harmony_theta": float(h_theta),
                                 "harmony_theta_max": float(h_theta_max)},
             "llm": {"provider": provider, "model": model, "api_key": api_key,
-                    "base_url": base_url, "condition_b": bool(condition_b)},
+                    "base_url": base_url, "condition_b": bool(condition_b),
+                    "max_tokens": int(max_tokens)},
         }
         sheet = st.session_state.get("sheet")
         if sheet is None:

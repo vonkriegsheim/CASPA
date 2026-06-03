@@ -427,6 +427,39 @@ def parse_recommended_panel(text: str) -> str:
 
 # ---- main -------------------------------------------------------------------
 
+_TRUNCATED_FINISHES = {"length", "max_tokens", "incomplete", "model_length"}
+
+
+def _model_token_cap(model: str):
+    """Known hard output caps for models whose limit is below CASPA's default, so
+    we clamp proactively instead of round-tripping a 400. None = no clamp needed
+    (gpt-4o/gpt-5/claude/gemini are all >= the 16000 default)."""
+    m = (model or "").lower()
+    if "deepseek" in m:
+        return 8192
+    if m.startswith("gpt-4-turbo") or m == "gpt-4":
+        return 4096
+    return None
+
+
+def _extract_token_cap(msg: str):
+    """Parse a model's max-output-token cap from a 'max_tokens too large' error,
+    so we can retry at the cap instead of failing (model-agnostic fallback)."""
+    for pat in (r"at most (\d+)",
+                r"less than or equal to (\d+)",
+                r"range[^0-9\[]*\[?\s*\d+\s*,\s*(\d+)",   # "valid range ... [1, 8192]"
+                r"\[\s*\d+\s*,\s*(\d+)\s*\]",
+                r"maximum(?:[^0-9]{0,40})(\d+)",
+                r"supports?(?:[^0-9]{0,20})(\d+)"):
+        m = re.search(pat, msg, re.IGNORECASE)
+        if m:
+            try:
+                return int(m.group(1))
+            except ValueError:
+                pass
+    return None
+
+
 def _call_llm(client, model: str, system: str, user: str,
               max_tokens: int, temperature: float,
               thinking_budget: int = 0) -> tuple[str, str]:
@@ -437,55 +470,63 @@ def _call_llm(client, model: str, system: str, user: str,
     Claude models use the Anthropic Messages API.
     All other models use Chat Completions (v1/chat/completions).
     thinking_budget > 0 enables extended thinking for Claude models.
+
+    Robustness: if the model rejects max_tokens as too large (e.g. DeepSeek caps
+    output at 8192), retry once at the cap it reports rather than failing; and
+    warn loudly if the response was truncated (so clusters are not silently lost).
     """
-    # Detect Anthropic client by type
     try:
         import anthropic as _anthropic_mod
-        _is_anthropic = isinstance(client, _anthropic_mod.Anthropic)
+        is_anthropic = isinstance(client, _anthropic_mod.Anthropic)
     except ImportError:
-        _is_anthropic = False
-
-    if _is_anthropic:
-        kwargs = dict(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        )
-        if thinking_budget > 0:
-            kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
-            # Extended thinking requires temperature=1
-        else:
-            kwargs["temperature"] = temperature
-        r = client.messages.create(**kwargs)
-        # Extract only text blocks (skip thinking blocks)
-        text = "".join(
-            block.text for block in r.content
-            if hasattr(block, "type") and block.type == "text"
-        )
-        return text, r.stop_reason
-
+        is_anthropic = False
     use_responses_api = model.startswith("gpt-5") or model.startswith("o")
 
-    if use_responses_api:
-        r = client.responses.create(
-            model=model,
-            instructions=system,
-            input=user,
-            max_output_tokens=max_tokens,
-        )
-        return r.output_text, r.status
-    else:
+    def _invoke(mt):
+        if is_anthropic:
+            kwargs = dict(model=model, max_tokens=mt, system=system,
+                          messages=[{"role": "user", "content": user}])
+            if thinking_budget > 0:
+                kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+            else:
+                kwargs["temperature"] = temperature
+            r = client.messages.create(**kwargs)
+            text = "".join(b.text for b in r.content
+                           if hasattr(b, "type") and b.type == "text")
+            return text, r.stop_reason
+        if use_responses_api:
+            r = client.responses.create(model=model, instructions=system, input=user,
+                                        max_output_tokens=mt)
+            return r.output_text, r.status
         r = client.chat.completions.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": user},
-            ],
-        )
+            model=model, max_tokens=mt, temperature=temperature,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": user}])
         return r.choices[0].message.content, r.choices[0].finish_reason
+
+    # Proactively clamp to a known low cap (DeepSeek 8192, gpt-4-turbo 4096) ...
+    known = _model_token_cap(model)
+    effective = min(max_tokens, known) if known else max_tokens
+    if known and effective < max_tokens:
+        print(f"INFO: clamping max_tokens {max_tokens} -> {effective} for {model}.",
+              file=sys.stderr)
+    try:
+        text, finish = _invoke(effective)
+    except Exception as e:                                    # noqa: BLE001
+        # ... and reactively retry at the cap the model reports for anything else.
+        cap = _extract_token_cap(str(e))
+        if cap and 0 < cap < effective:
+            print(f"INFO: {model} rejected max_tokens={effective}; retrying at its "
+                  f"reported cap of {cap}.", file=sys.stderr)
+            text, finish = _invoke(cap)
+        else:
+            raise
+
+    if str(finish).lower() in _TRUNCATED_FINISHES:
+        print(f"WARNING: {model} response was truncated (finish={finish}). The "
+              f"annotation may be incomplete — raise scp.llm.max_tokens (currently "
+              f"{max_tokens}) if clusters are missing.", file=sys.stderr)
+    return text, finish
 
 
 def parse_recommended_panel_genes(text: str) -> list[str]:
@@ -1029,6 +1070,13 @@ def main():
     rows_p2 = parse_annotation_table(text_p2)
     final_rows = rows_p2 if rows_p2 else rows_p1
     print(f"Parsed {len(final_rows)} annotations from pass 2")
+
+    # Completeness guard: every cluster should get a call. Fewer usually means the
+    # LLM output was truncated (token cap) or a row failed to parse.
+    if n_clusters and len(final_rows) < n_clusters:
+        print(f"WARNING: only {len(final_rows)} of {n_clusters} clusters were "
+              f"annotated. Output may have been truncated (raise scp.llm.max_tokens) "
+              f"or some rows failed to parse.", file=sys.stderr)
 
     # =========================================================================
     # WRITE OUTPUTS
