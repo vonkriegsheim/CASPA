@@ -14,6 +14,7 @@ warnings (the packages are installed; PATH is a per-shell concern), not failures
 
 import argparse
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
@@ -55,9 +56,18 @@ R_PACKAGES = [
 
 
 def find_rscript(override=None):
-    """Locate Rscript: explicit override, then PATH, then common install dirs."""
+    """Locate the Rscript the pipeline will use — same precedence as run.py:
+    explicit override -> CASPA_RSCRIPT -> bundled <CASPA>/R -> PATH -> system R."""
     if override:
         return override if Path(override).exists() else None
+    env_r = os.environ.get("CASPA_RSCRIPT", "").strip()
+    if env_r and Path(env_r).exists():
+        return env_r
+    exe = "Rscript.exe" if os.name == "nt" else "Rscript"
+    caspa_dir = Path(__file__).resolve().parent.parent
+    for cand in (caspa_dir / "R" / "bin" / exe, caspa_dir / "R" / "bin" / "x64" / exe):
+        if cand.exists():
+            return str(cand)
     found = shutil.which("Rscript")
     if found:
         return found
@@ -115,6 +125,8 @@ def check_r(rscript):
         if len(parts) >= 2:
             versions[parts[0]] = parts[1]
     print(f"\nR: {rscript}")
+    if os.environ.get("CASPA_RSCRIPT", "").strip():
+        print(f"   (pinned via CASPA_RSCRIPT = {os.environ['CASPA_RSCRIPT']})")
     missing = []
     for name, required in R_PACKAGES:
         v = versions.get(name, "MISSING")

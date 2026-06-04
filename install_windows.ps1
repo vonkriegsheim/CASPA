@@ -76,6 +76,12 @@ Write-Host "`n[2/3] Installing R / Bioconductor packages (BiocManager)..." -Fore
 & $rs "$repo\pipeline\scripts\R\install_r_packages.R"
 if ($LASTEXITCODE -ne 0) { Write-Error "R package install reported missing packages."; exit 1 }
 
+# Pin the R that got the packages, so run.py uses exactly this one even if the
+# machine has other CRAN R versions (run.py honours CASPA_RSCRIPT first).
+Write-Host "`nPinning Rscript via CASPA_RSCRIPT (user env): $rs"
+[Environment]::SetEnvironmentVariable("CASPA_RSCRIPT", $rs, "User")
+$env:CASPA_RSCRIPT = $rs   # also for this session's doctor check
+
 Write-Host "`n[3/3] Verifying (caspa doctor)..." -ForegroundColor Cyan
 & $py "$repo\caspa\doctor.py" --rscript $rs
 $doctor = $LASTEXITCODE
