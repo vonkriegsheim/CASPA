@@ -67,16 +67,38 @@ def _build_env():
         prepend.append(os.path.join(py_dir, "Scripts"))
     python_used = sys.executable
 
-    # Rscript -> native CRAN R. Only an issue on Windows: bioconda has no win-64
-    # Bioconductor, so a conda R lacks scp/AUCell. On Linux/macOS the conda R is
-    # correct (that's the supported conda path), so leave PATH as-is there.
+    # Rscript -> the R that actually has CASPA's packages, chosen deterministically
+    # so a stray system R can't shadow it. Priority:
+    #   1. CASPA_RSCRIPT env override
+    #   2. R bundled next to CASPA (the Windows installer puts it at <CASPA>\R)
+    #   3. whatever is on PATH, unless it's a conda R on Windows (no win-64 scp)
+    #   4. highest-version native CRAN R under Program Files
+    exe = "Rscript.exe" if os.name == "nt" else "Rscript"
+    rscript_used = None
+
+    env_r = os.environ.get("CASPA_RSCRIPT", "").strip()
+    if env_r and os.path.exists(env_r):
+        rscript_used = env_r
+
+    if not rscript_used:
+        for cand in (os.path.join(CASPA_DIR, "R", "bin", exe),
+                     os.path.join(CASPA_DIR, "R", "bin", "x64", exe)):
+            if os.path.exists(cand):
+                rscript_used = cand
+                break
+
     cur_r = shutil.which("Rscript", path=env.get("PATH"))
-    rscript_used = cur_r
-    if os.name == "nt":
+    if not rscript_used and cur_r and not (os.name == "nt" and _is_conda_r(cur_r)):
+        rscript_used = cur_r
+
+    if not rscript_used and os.name == "nt":
         native = _native_rscript_dir()
-        if native and (cur_r is None or _is_conda_r(cur_r)):
-            prepend.insert(0, native)
-            rscript_used = os.path.join(native, "Rscript.exe")
+        if native:
+            rscript_used = os.path.join(native, exe)
+
+    # Make the chosen R win for the Snakefile's bare `Rscript`.
+    if rscript_used:
+        prepend.insert(0, os.path.dirname(rscript_used))
 
     env["PATH"] = os.pathsep.join(prepend) + os.pathsep + env.get("PATH", "")
     return env, python_used, rscript_used
