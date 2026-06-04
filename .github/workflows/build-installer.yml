@@ -1,0 +1,41 @@
+name: build-installer
+
+# Compiles the Windows installer (.exe) on a Windows runner and uploads it as an
+# artifact. On a published release it also attaches caspa-setup.exe to the release.
+# Run manually from the Actions tab (workflow_dispatch) to get a testable build.
+
+on:
+  push:
+    branches: [installer]
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "installer\caspa-setup.iss"
+          if (-not (Test-Path "installer\Output\caspa-setup.exe")) { throw "installer not produced" }
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: caspa-setup
+          path: installer/Output/caspa-setup.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/Output/caspa-setup.exe
