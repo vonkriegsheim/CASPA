@@ -104,6 +104,31 @@ def _build_env():
     return env, python_used, rscript_used
 
 
+def _reexec_with_bundled_python_if_needed():
+    """If the Python running run.py lacks snakemake (e.g. a stray pre-existing
+    miniforge picked up from PATH), re-exec with the CASPA-bundled Python that has
+    the deps — so `python caspa/run.py ...` works from a plain prompt, not just the
+    CASPA Console. Does nothing if the current Python already has snakemake."""
+    import importlib.util
+    if importlib.util.find_spec("snakemake") is not None:
+        return
+    exe = "python.exe" if os.name == "nt" else "python"
+    for cand in (os.path.join(CASPA_DIR, "miniforge3", exe),
+                 os.path.join(CASPA_DIR, "miniforge3", "envs", "caspa", exe)):
+        if os.path.exists(cand) and os.path.abspath(cand) != os.path.abspath(sys.executable):
+            try:
+                ok = subprocess.run([cand, "-c", "import snakemake"],
+                                    capture_output=True).returncode == 0
+            except Exception:                                  # noqa: BLE001
+                ok = False
+            if ok:
+                print(f"[caspa run] this Python has no snakemake; switching to the "
+                      f"bundled Python:\n  {cand}", file=sys.stderr)
+                sys.stdout.flush(); sys.stderr.flush()
+                os.execv(cand, [cand, os.path.abspath(__file__), *sys.argv[1:]])
+    # Fall through: main() prints a clear "install the deps" message.
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Run the CASPA SCP pipeline")
     p.add_argument("--workdir", required=True,
@@ -124,7 +149,19 @@ def parse_args():
 
 
 def main():
+    _reexec_with_bundled_python_if_needed()   # may replace this process; returns if current Python is fine
     args = parse_args()
+
+    import importlib.util
+    if importlib.util.find_spec("snakemake") is None:
+        print("[caspa run] ERROR: 'snakemake' is not installed in this Python:")
+        print(f"  {sys.executable}")
+        print("  Fix one of:")
+        print("   - run from the 'CASPA Console' shortcut (Start Menu -> CASPA), or")
+        print(f'   - "{sys.executable}" -m pip install -r '
+              f'"{os.path.join(CASPA_DIR, "requirements-windows.txt")}"')
+        sys.exit(1)
+
     workdir = os.path.abspath(args.workdir)
 
     # Sanity check
