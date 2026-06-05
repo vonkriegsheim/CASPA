@@ -44,7 +44,7 @@ key from aistudio.google.com) works.
 **Windows (manual)** — bioconda has no win-64 Bioconductor builds, so install
 Python with pip (miniforge) and R from CRAN. After installing
 [miniforge](https://github.com/conda-forge/miniforge/releases) and
-[R 4.5.2](https://cran.r-project.org/bin/windows/base/old/4.5.2/), from a
+[R 4.6.0](https://cran.r-project.org/bin/windows/base/), from a
 PowerShell prompt:
 
 ```powershell
@@ -93,14 +93,17 @@ tested stack rather than "whatever is newest". Bump deliberately and re-test.
 
 | Component | Pinned to | Where |
 |---|---|---|
-| **R** | **4.5.2** (Bioconductor **3.21**) | `environment.yml` (`r-base=4.5`), the Windows installer, `install_windows.ps1` guidance |
+| **R** (Windows native) | **4.6.0** (Bioconductor **3.23**) | the Windows installer, `install_windows.ps1`, `install_r_packages.R` — the combo tested **end-to-end** |
+| **R** (conda / Docker) | **4.5** (Bioconductor **3.21**) | `environment.yml` (`r-base=4.5`) — its own known-good linux solve |
 | **Python** | **3.11** | `environment.yml`; the Windows pip path runs on miniforge's 3.11–3.12 (both tested) |
 | **Python packages** | exact versions | `requirements-windows.txt` (Windows) / `environment.yml` (conda/Docker) |
-| **R / Bioconductor packages** | the Bioc 3.21 release set | fixed once R is pinned |
+| **R / Bioconductor packages** | the Bioc release set | fixed once R is pinned |
 
-Newer R (e.g. 4.6 / Bioc 3.23) still works, but some packages lack a prebuilt
-Windows binary there and are built from source by `install_r_packages.R` — which
-is why the default is the 4.5.2 / 3.21 combo.
+If a package has no prebuilt Windows binary for your R/Bioc, `install_r_packages.R`
+falls back to a source install (fine for pure-R/data packages such as `org.Hs.eg.db`,
+`GO.db`). Both the installer and `caspa doctor` verify each R package by **loading**
+it, not just by name — so a package that is installed but can't load (a missing
+transitive dep like `GSEABase`/`GO.db`/`getopt`) is caught, not reported as green.
 
 ### GUI (optional)
 

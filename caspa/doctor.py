@@ -44,14 +44,17 @@ PY_PACKAGES = [
     ("anthropic", "anthropic", False),
 ]
 
-# (package, required)
+# (package, required). Includes transitive deps that are easy to miss because
+# the dependent package still lists by name while failing to LOAD:
+#   getopt -> optparse, GSEABase -> AUCell, GO.db -> clusterProfiler.
 R_PACKAGES = [
     ("scp", True), ("SingleCellExperiment", True), ("AUCell", True),
-    ("clusterProfiler", True), ("AnnotationDbi", True), ("S4Vectors", True),
+    ("GSEABase", True), ("clusterProfiler", True), ("GO.db", True),
+    ("AnnotationDbi", True), ("S4Vectors", True),
     ("org.Hs.eg.db", True), ("org.Mm.eg.db", True), ("fgsea", True),
     ("IHW", True), ("data.table", True), ("ggplot2", True), ("igraph", True),
-    ("msigdbr", True), ("optparse", True), ("pheatmap", True), ("uwot", True),
-    ("scales", True), ("matrixStats", True),
+    ("msigdbr", True), ("getopt", True), ("optparse", True), ("pheatmap", True),
+    ("uwot", True), ("scales", True), ("matrixStats", True),
 ]
 
 
@@ -110,9 +113,13 @@ def check_r(rscript):
         print("\nR: Rscript not found - install R from CRAN. Cannot check R packages.")
         return None
     names = [n for n, _ in R_PACKAGES]
-    expr = ("ip <- rownames(installed.packages()); "
+    # Verify by LOADING, not by name: a package can be in installed.packages()
+    # yet fail to load because a dependency (GSEABase, GO.db, getopt, ...) is
+    # missing — a false green the old name-only check could not see.
+    expr = ("load1 <- function(p) isTRUE(tryCatch(suppressWarnings(suppressMessages("
+            "requireNamespace(p, quietly=TRUE))), error=function(e) FALSE)); "
             "for (p in commandArgs(TRUE)) "
-            "cat(p, if (p %in% ip) as.character(packageVersion(p)) else 'MISSING', '\\n')")
+            "cat(p, if (load1(p)) as.character(packageVersion(p)) else 'MISSING', '\\n')")
     try:
         out = subprocess.run([rscript, "-e", expr] + names,
                              capture_output=True, text=True, timeout=180)

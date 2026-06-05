@@ -62,8 +62,8 @@ Write-Host "Python : $py"
 
 $rs = Find-Rscript
 if (-not $rs) {
-  Write-Error ("No R found. Install the pinned R 4.5.2 (Bioconductor 3.21 - the tested combo) from " +
-    "https://cran.r-project.org/bin/windows/base/old/4.5.2/ then re-run this script.")
+  Write-Error ("No R found. Install the pinned R 4.6.0 (Bioconductor 3.23 - the tested combo) from " +
+    "https://cran.r-project.org/bin/windows/base/ then re-run this script.")
   exit 1
 }
 Write-Host "Rscript: $rs"

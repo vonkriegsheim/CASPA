@@ -35,12 +35,14 @@ if (-not (Test-Path $py)) {
     if (-not (Test-Path $py)) { Die "Miniforge install did not produce $py" }
 } else { Say "Miniforge already present." }
 
-# --- 2. Native CRAN R 4.5.2 (pinned; bioconda has no win-64 Bioconductor) ----
+# --- 2. Native CRAN R 4.6.0 (pinned; bioconda has no win-64 Bioconductor) ----
 $rscript = (Get-ChildItem -Path $rdir -Recurse -Filter Rscript.exe -ErrorAction SilentlyContinue | Select-Object -First 1)
 if (-not $rscript) {
     try {
-        # Pinned R 4.5.2 (Bioconductor 3.21) - the tested combo, not "latest".
-        $RVER = "4.5.2"
+        # Pinned R 4.6.0 (Bioconductor 3.23) - the combo CASPA is tested end-to-end
+        # against, not "latest". CRAN serves the current release from /base/ and
+        # superseded ones from /base/old/<ver>/; we try both below.
+        $RVER = "4.6.0"
         $rexe = Join-Path $tmp "R-$RVER-win.exe"
         $ok = $false
         foreach ($u in @("https://cran.r-project.org/bin/windows/base/old/$RVER/R-$RVER-win.exe",
