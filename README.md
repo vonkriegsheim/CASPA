@@ -63,10 +63,21 @@ docker build -t caspa .
 docker run --rm -v /host/MyExperiment:/work caspa --workdir /work --cores 8
 ```
 
-> **R version note:** the native-R path is tested against **R 4.5.x / Bioconductor
-> 3.21** (what `r-base=4.5` in `environment.yml` and the Docker image pin to).
-> Newer R (e.g. 4.6 / Bioc 3.23) works, but a few packages have no prebuilt
-> Windows binary yet and are installed from source by `install_r_packages.R`.
+### Supported stack (pinned)
+
+Versions are pinned for reproducibility — every install path lands on the same
+tested stack rather than "whatever is newest". Bump deliberately and re-test.
+
+| Component | Pinned to | Where |
+|---|---|---|
+| **R** | **4.5.2** (Bioconductor **3.21**) | `environment.yml` (`r-base=4.5`), the Windows installer, `install_windows.ps1` guidance |
+| **Python** | **3.11** | `environment.yml`; the Windows pip path runs on miniforge's 3.11–3.12 (both tested) |
+| **Python packages** | exact versions | `requirements-windows.txt` (Windows) / `environment.yml` (conda/Docker) |
+| **R / Bioconductor packages** | the Bioc 3.21 release set | fixed once R is pinned |
+
+Newer R (e.g. 4.6 / Bioc 3.23) still works, but some packages lack a prebuilt
+Windows binary there and are built from source by `install_r_packages.R` — which
+is why the default is the 4.5.2 / 3.21 combo.
 
 ### GUI (optional)
 

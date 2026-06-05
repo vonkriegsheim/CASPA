@@ -1,26 +1,27 @@
-# CASPA — Windows Python dependencies
+# CASPA — Windows Python dependencies (PINNED to the tested stack)
 #
-# bioconda has no win-64 builds for the R/Bioconductor stack, so the conda
-# environment.yml cannot be solved on Windows. Install Python here with pip into
-# the miniforge base env, and install R separately from CRAN, then run
-# pipeline/scripts/R/install_r_packages.R.
+# Versions are pinned for reproducibility: every fresh install gets the same,
+# tested stack rather than whatever is newest that day. Bump deliberately (and
+# re-test) — do not float. bioconda has no win-64 Bioconductor, so install Python
+# here with pip and R separately from CRAN (R 4.5.2 / Bioconductor 3.21), then
+# run pipeline/scripts/R/install_r_packages.R.
 #
 #   pip install -r requirements-windows.txt
 #
-snakemake
-directlfq
-umap-learn
-scanpy
-harmonypy==0.0.10   # 2.x is a compiled BLAS/Armadillo build that needs a C++ toolchain on Windows
-leidenalg
-igraph
-numpy
-pandas
-scipy
-scikit-learn
-matplotlib
-seaborn
-adjustText
-openai
-anthropic           # optional: only used when scp.llm.provider = "claude"
-streamlit           # optional: only needed for the GUI (caspa/gui.py)
+snakemake==9.22.0
+directlfq==0.3.3
+umap-learn==0.5.12
+scanpy==1.12.1
+harmonypy==0.0.10      # 2.x is a compiled BLAS/Armadillo build; 0.0.x is the tested API
+leidenalg==0.12.0
+igraph==1.0.0
+numpy==2.4.6
+pandas==2.3.3
+scipy==1.17.1
+scikit-learn==1.9.0
+matplotlib==3.10.9
+seaborn==0.13.2
+adjustText==1.3.0
+openai==2.40.0
+anthropic==0.105.2     # optional: only used when scp.llm.provider = "claude"
+streamlit==1.58.0      # optional: only needed for the GUI (caspa/gui.py)
