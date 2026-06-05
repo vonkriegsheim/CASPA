@@ -23,8 +23,23 @@ conda activate caspa
 **[`caspa-setup.exe`](https://github.com/vonkriegsheim/CASPA/releases/download/v0.1.0/caspa-setup.exe)**
 ([all releases](https://github.com/vonkriegsheim/CASPA/releases)) and double-click.
 It's a no-admin installer that sets up a private, version-pinned Python + R inside
-its own folder and adds Start-Menu shortcuts (GUI / Console / Doctor). See
-[`installer/`](installer/) for what it does.
+its own folder (installs to `%LOCALAPPDATA%\CASPA`; ~20–40 min as it downloads
+R + packages). When it finishes you get a Start-Menu **CASPA** folder with three
+shortcuts (each is also a `.cmd` in the install folder):
+
+| Shortcut | What to run it for |
+|---|---|
+| **CASPA Setup (GUI)** | Build an experiment by **form** — pick the `pg_matrix`, describe the experiment (condition/FACS for the LLM), auto-detect or edit batches, choose the LLM model + key, click **Generate**. It writes the config into a workdir and prints the exact run command. |
+| **CASPA Console** | A command prompt with CASPA's Python + R already on PATH. **Run the analysis here:** `python caspa\run.py --workdir <workdir> --cores 8` |
+| **CASPA Doctor** | Verifies the install (Python + R packages, and which R is used). Run this first if anything misbehaves. |
+
+**End to end:** open **CASPA Setup (GUI)** → fill the form → **Generate** (note the
+workdir it creates, e.g. `C:\Users\you\MyExperiment`) → open **CASPA Console** →
+paste the run command it printed. Results land under `<workdir>\scp\` — cell-type
+calls in `scp\llm\cluster_cell_type_annotations.tsv`, figures in `scp\llm\plots\`
+and `scp\viz\plots\`. The annotation step needs an **LLM API key** (enter it in the
+GUI): OpenAI/Anthropic/DeepSeek are paid; Gemini's free tier (`gemini-2.5-flash`,
+key from aistudio.google.com) works.
 
 **Windows (manual)** — bioconda has no win-64 Bioconductor builds, so install
 Python with pip (miniforge) and R from CRAN. After installing
