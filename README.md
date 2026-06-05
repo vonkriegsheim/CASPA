@@ -19,10 +19,17 @@ bash install_unix.sh          # conda env create -f environment.yml + verify
 conda activate caspa
 ```
 
-**Windows** — bioconda has no win-64 Bioconductor builds, so install Python with
-pip (miniforge) and R from CRAN. After installing
+**Windows (easiest)** — download **`caspa-setup.exe`** from the
+[Releases](https://github.com/vonkriegsheim/CASPA/releases) page and double-click.
+It's a no-admin installer that sets up a private, version-pinned Python + R inside
+its own folder and adds Start-Menu shortcuts (GUI / Console / Doctor). See
+[`installer/`](installer/) for what it does.
+
+**Windows (manual)** — bioconda has no win-64 Bioconductor builds, so install
+Python with pip (miniforge) and R from CRAN. After installing
 [miniforge](https://github.com/conda-forge/miniforge/releases) and
-[R](https://cran.r-project.org/bin/windows/base/), from a PowerShell prompt:
+[R 4.5.2](https://cran.r-project.org/bin/windows/base/old/4.5.2/), from a
+PowerShell prompt:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install_windows.ps1
