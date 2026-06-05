@@ -19,8 +19,9 @@ bash install_unix.sh          # conda env create -f environment.yml + verify
 conda activate caspa
 ```
 
-**Windows (easiest)** — download **`caspa-setup.exe`** from the
-[Releases](https://github.com/vonkriegsheim/CASPA/releases) page and double-click.
+**Windows (easiest)** — download
+**[`caspa-setup.exe`](https://github.com/vonkriegsheim/CASPA/releases/download/v0.1.0/caspa-setup.exe)**
+([all releases](https://github.com/vonkriegsheim/CASPA/releases)) and double-click.
 It's a no-admin installer that sets up a private, version-pinned Python + R inside
 its own folder and adds Start-Menu shortcuts (GUI / Console / Doctor). See
 [`installer/`](installer/) for what it does.
