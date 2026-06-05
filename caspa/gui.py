@@ -378,10 +378,17 @@ if st.button("✅ Generate config + sample sheet", type="primary",
             sheet = pd.DataFrame({"sample_id": [], "sample_file": [], "batch": []})
         cfg_p, sheet_p = write_experiment(os.path.abspath(workdir), project, input_block,
                                           scp_block, sheet)
-        st.success("Workdir is ready.")
+        st.success("✅ Workdir ready.")
         st.code(f"{cfg_p}\n{sheet_p}", language="text")
-        st.markdown("**Next step — run the pipeline:**")
-        st.code(f"python caspa/run.py --workdir \"{os.path.abspath(workdir)}\" --cores 8", language="bash")
+        st.markdown("**Next step — run the pipeline.** Open **CASPA Console** "
+                    "(Start Menu → CASPA) — or any shell with CASPA's Python + R on "
+                    "PATH — and paste:")
+        st.code(f'python caspa\\run.py --workdir "{os.path.abspath(workdir)}" --cores 8',
+                language="bash")
+        st.caption(
+            f"Results appear under  {os.path.join(os.path.abspath(workdir), 'scp')}  — "
+            "cell types in scp\\llm\\cluster_cell_type_annotations.tsv, figures in "
+            "scp\\llm\\plots and scp\\viz\\plots.")
         if not is_spectronaut and len(sheet) and \
                 len({int(b) for b in sheet["batch"] if int(b) > 0}) <= 1:
             st.info("All samples are in one batch — Harmony batch correction will be skipped.")
