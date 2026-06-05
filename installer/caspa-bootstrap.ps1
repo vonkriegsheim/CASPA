@@ -35,19 +35,20 @@ if (-not (Test-Path $py)) {
     if (-not (Test-Path $py)) { Die "Miniforge install did not produce $py" }
 } else { Say "Miniforge already present." }
 
-# --- 2. Native CRAN R (bioconda has no win-64 Bioconductor) -----------------
+# --- 2. Native CRAN R 4.5.2 (pinned; bioconda has no win-64 Bioconductor) ----
 $rscript = (Get-ChildItem -Path $rdir -Recurse -Filter Rscript.exe -ErrorAction SilentlyContinue | Select-Object -First 1)
 if (-not $rscript) {
     try {
-        Say "Finding the latest R release on CRAN..."
-        $base = "https://cran.r-project.org/bin/windows/base/"
-        $page = Invoke-WebRequest $base -UseBasicParsing
-        $rel  = ($page.Links | Where-Object { $_.href -match 'R-\d+\.\d+\.\d+-win\.exe' } | Select-Object -First 1).href
-        if (-not $rel) { Die "Could not find the R installer link on CRAN." }
-        Say "Downloading $rel ..."
-        $rexe = Join-Path $tmp "R-win.exe"
-        Invoke-WebRequest ($base + $rel) -OutFile $rexe
-        Say "Installing R to $rdir ..."
+        # Pinned R 4.5.2 (Bioconductor 3.21) - the tested combo, not "latest".
+        $RVER = "4.5.2"
+        $rexe = Join-Path $tmp "R-$RVER-win.exe"
+        $ok = $false
+        foreach ($u in @("https://cran.r-project.org/bin/windows/base/old/$RVER/R-$RVER-win.exe",
+                         "https://cran.r-project.org/bin/windows/base/R-$RVER-win.exe")) {
+            try { Say "Downloading R $RVER ..."; Invoke-WebRequest $u -OutFile $rexe; $ok = $true; break } catch {}
+        }
+        if (-not $ok) { Die "Could not download R $RVER from CRAN." }
+        Say "Installing R $RVER to $rdir ..."
         Start-Process -Wait -FilePath $rexe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/DIR=$rdir"
     } catch { Die "R download/install failed: $($_.Exception.Message)" }
     $rscript = (Get-ChildItem -Path $rdir -Recurse -Filter Rscript.exe -ErrorAction SilentlyContinue | Select-Object -First 1)
