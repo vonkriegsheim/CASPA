@@ -67,6 +67,69 @@ def top_markers_str(df: pd.DataFrame, cluster: str, cluster_col: str,
     return "; ".join(parts) if parts else ""
 
 
+def lookup_gene_row(gene: str, cl_str: str, dm, im) -> dict:
+    """Look up a single gene's detection/intensity stats for one cluster,
+    regardless of whether that gene ranks among this cluster's own top
+    markers. Shared by researcher-supplied markers and the auto-derived
+    cross-cluster reference panel."""
+    gl = gene.lower()
+
+    det_row = None
+    if dm is not None and "Cluster" in dm.columns:
+        sub = dm[dm["Cluster"].astype(str) == cl_str]
+        for gcol in ["Genes", "Gene"]:
+            if gcol in sub.columns:
+                match = sub[sub[gcol].astype(str).str.lower().str.split(";").str[0].str.strip() == gl]
+                if not match.empty:
+                    det_row = match.iloc[0]
+                    break
+
+    int_row = None
+    if im is not None and "Cluster" in im.columns:
+        sub = im[im["Cluster"].astype(str) == cl_str]
+        for gcol in ["Genes", "Gene"]:
+            if gcol in sub.columns:
+                match = sub[sub[gcol].astype(str).str.lower().str.split(";").str[0].str.strip() == gl]
+                if not match.empty:
+                    int_row = match.iloc[0]
+                    break
+
+    def fmt(val, col, decimals=3):
+        if val is None:
+            return "—"
+        v = val.get(col, None)
+        if v is None or (isinstance(v, float) and v != v):
+            return "—"
+        try:
+            return f"{float(v):.{decimals}f}"
+        except (ValueError, TypeError):
+            return "—"
+
+    return {
+        "gene": gene,
+        "det_rate_in":  fmt(det_row, "det_rate_in", 2),
+        "det_rate_out": fmt(det_row, "det_rate_out", 2),
+        "log2_or":      fmt(det_row, "log2_odds_ratio", 2),
+        "det_q":        fmt(det_row, "qvalue", 4),
+        "med_int_in":   fmt(int_row, "median_in", 2),
+        "log2fc_int":   fmt(int_row, "log2FC_detected_only", 2),
+        "int_q":        fmt(int_row, "qvalue", 4),
+    }
+
+
+def render_gene_table(genes: list[str], cl_str: str, dm, im) -> list[str]:
+    """Render a Gene | det_rate_in | det_rate_out | log2_OR | ... table body
+    (no heading) for the given genes in one cluster."""
+    out = []
+    out.append("  | Gene | det_rate_in | det_rate_out | log2_OR | median_log2int_in | log2FC_int | det_qval | int_qval |")
+    out.append("  |------|-------------|--------------|---------|-------------------|------------|----------|----------|")
+    for gene in genes:
+        r = lookup_gene_row(gene, cl_str, dm, im)
+        out.append(f"  | {r['gene']} | {r['det_rate_in']} | {r['det_rate_out']} | {r['log2_or']} | "
+                   f"{r['med_int_in']} | {r['log2fc_int']} | {r['det_q']} | {r['int_q']} |")
+    return out
+
+
 def top_pathways_str(auc_mat: np.ndarray, pathway_names: list[str],
                      cell_cols: list[str], cluster_cell_mask: np.ndarray,
                      top_n: int) -> str:
@@ -101,6 +164,22 @@ def main():
                     help="Comma-separated gene names (or path to txt file, one gene per line) "
                          "that are biologically meaningful to the researcher. "
                          "Included verbatim in the LLM prompt as researcher-provided markers.")
+    ap.add_argument("--cross-cluster-reference", dest="cross_cluster_reference",
+                    action="store_true", default=True,
+                    help="For each cluster, also show per-cluster stats for the top consensus "
+                         "markers of OTHER clusters (data-driven, no hardcoded gene list). "
+                         "Prevents a cluster whose own top markers happen to be dominated by one "
+                         "modality/lineage from having its evidence for an alternative lineage go "
+                         "unshown simply because that lineage's canonical genes did not rank "
+                         "among this cluster's own top-N. Default: on.")
+    ap.add_argument("--no-cross-cluster-reference", dest="cross_cluster_reference",
+                    action="store_false")
+    ap.add_argument("--cross-cluster-top-n", type=int, default=2,
+                    help="How many top consensus markers to take from each cluster when building "
+                         "the cross-cluster reference gene set (default 2).")
+    ap.add_argument("--cross-cluster-max-genes", type=int, default=20,
+                    help="Cap on total distinct genes in the cross-cluster reference set, to "
+                         "bound prompt growth for datasets with many clusters (default 20).")
     ap.add_argument("--config", action="append", default=[],
                     help="dataset.json (or multiple configs). Experiment context "
                          "(project.name, project.description, project.species_label) "
@@ -130,8 +209,13 @@ def main():
 
     # Merge assignment QC metrics
     assign["Run"] = assign["Run"].astype(str)
-    assign["n_detected_proteins"] = pd.to_numeric(assign.get("n_detected_proteins"), errors="coerce")
-    assign["missing_fraction"]    = pd.to_numeric(assign.get("missing_fraction"),    errors="coerce")
+    # Degrade gracefully if an older assignments file lacks these QC columns:
+    # pd.to_numeric(None) raises TypeError and would abort the whole summary.
+    for _col in ("n_detected_proteins", "missing_fraction"):
+        if _col in assign.columns:
+            assign[_col] = pd.to_numeric(assign[_col], errors="coerce")
+        else:
+            assign[_col] = float("nan")
     assign["Condition"] = assign["Run"].map(run_to_cond)
 
     # Optional inputs
@@ -163,6 +247,11 @@ def main():
 
     # ---- Build summary ----
     rows = []
+    # Raw (unformatted) top-marker gene names per cluster, used to build the
+    # data-driven cross-cluster reference panel below -- no hardcoded gene list,
+    # derived entirely from each cluster's own top consensus (or detection,
+    # if consensus markers are unavailable) markers.
+    cluster_top_genes: dict[str, list[str]] = {}
     for cl in clusters:
         cl_cells = assign[assign["Condition"] == cl]
         n_cells = len(cl_cells)
@@ -239,6 +328,41 @@ def main():
         else:
             row["top_consensus_markers"] = ""
 
+        # Cross-cluster reference gene candidates for this cluster: union of
+        # top-N by BLENDED consensus score (rewards concordance across all
+        # three modalities) AND top-N by raw detection specificity alone.
+        # These are not redundant -- a gene highly specific in detection
+        # (e.g. det_rate_in=1.00 vs 0.51, q=1e-10) can rank far outside the
+        # consensus top-N if it lacks matching intensity/scplainer support,
+        # even though single-modality detection specificity is itself
+        # strong, decisive evidence. Using consensus score alone silently
+        # drops exactly this class of marker from the reference panel.
+        cl_genes: list[str] = []
+        if cm is not None and "Cluster" in cm.columns and "consensus_score" in cm.columns:
+            cm_sub2 = cm[cm["Cluster"].astype(str) == str(cl)].copy()
+            cm_sub2["consensus_score"] = pd.to_numeric(cm_sub2["consensus_score"], errors="coerce")
+            cm_sub2 = cm_sub2.sort_values("consensus_score", ascending=False).head(args.cross_cluster_top_n)
+            cl_genes.extend(gene_name(cm_sub2, i) for i in range(len(cm_sub2)))
+        if dm is not None and "Cluster" in dm.columns and "det_rate_in" in dm.columns:
+            dm_sub2 = dm[dm["Cluster"].astype(str) == str(cl)].copy()
+            dm_sub2["det_rate_in"] = pd.to_numeric(dm_sub2["det_rate_in"], errors="coerce")
+            dm_sub2["qvalue"] = pd.to_numeric(dm_sub2.get("qvalue", pd.Series(dtype=float)), errors="coerce")
+            # det_rate_in alone produces many ties (e.g. every gene detected in
+            # 100% of a cluster's cells ties at 1.0); qvalue as an ascending
+            # tiebreaker surfaces the most statistically decisive gene among
+            # the tied set, rather than an arbitrary one from file order.
+            dm_sub2 = dm_sub2[dm_sub2["qvalue"] <= args.q_threshold].sort_values(
+                ["det_rate_in", "qvalue"], ascending=[False, True]).head(args.cross_cluster_top_n)
+            cl_genes.extend(gene_name(dm_sub2, i) for i in range(len(dm_sub2)))
+        # de-duplicate case-insensitively, preserve order
+        _seen_cl = set()
+        cl_genes_dedup = []
+        for g in cl_genes:
+            if g.lower() not in _seen_cl:
+                _seen_cl.add(g.lower())
+                cl_genes_dedup.append(g)
+        cluster_top_genes[str(cl)] = cl_genes_dedup
+
         # AUCell top pathways
         if auc_mat is not None:
             cl_run_mask = np.array([run_to_cond.get(r, "") == cl for r in auc_run_order])
@@ -254,6 +378,30 @@ def main():
     summary.to_csv(args.out, sep="\t", index=False)
     print(f"Wrote {args.out}")
     print(summary[["Cluster", "n_cells", "median_n_detected"]].to_string(index=False))
+
+    # ---- Data-driven cross-cluster reference gene set ----
+    # Union of each cluster's own top consensus (or detection) markers, in
+    # cluster order, deduplicated, capped at --cross-cluster-max-genes. No
+    # gene name is hardcoded: this set is entirely derived from whatever the
+    # data itself ranked as each cluster's defining markers, so a gene that
+    # is highly specific to one cluster (e.g. a macrophage marker in cluster
+    # C1) gets its per-cluster stats shown for every other cluster too --
+    # otherwise a cluster whose own top markers are dominated by a different
+    # lineage would never surface that gene's value for itself, even when it
+    # is relevant to weighing an alternative-lineage hypothesis for that
+    # cluster.
+    cross_ref_union: list[str] = []
+    _seen_cross_ref = set()
+    for cl in clusters:
+        for g in cluster_top_genes.get(str(cl), []):
+            gl = g.lower()
+            if gl not in _seen_cross_ref:
+                _seen_cross_ref.add(gl)
+                cross_ref_union.append(g)
+            if len(cross_ref_union) >= args.cross_cluster_max_genes:
+                break
+        if len(cross_ref_union) >= args.cross_cluster_max_genes:
+            break
 
     # ---- Parse custom protein list ----
     custom_proteins = []
@@ -594,55 +742,7 @@ def main():
         if custom_proteins:
             lines.append("- **researcher markers of interest** (per-marker stats):")
             lines.append("")
-            lines.append("  | Gene | det_rate_in | det_rate_out | log2_OR | median_log2int_in | log2FC_int | det_qval | int_qval |")
-            lines.append("  |------|-------------|--------------|---------|-------------------|------------|----------|----------|")
-
-            for gene in custom_proteins:
-                gl = gene.lower()
-
-                # Look up detection markers
-                det_row = None
-                if dm is not None and "Cluster" in dm.columns:
-                    sub = dm[dm["Cluster"].astype(str) == cl_str]
-                    for gcol in ["Genes", "Gene"]:
-                        if gcol in sub.columns:
-                            match = sub[sub[gcol].astype(str).str.lower().str.split(";").str[0].str.strip() == gl]
-                            if not match.empty:
-                                det_row = match.iloc[0]
-                                break
-
-                # Look up intensity markers
-                int_row = None
-                if im is not None and "Cluster" in im.columns:
-                    sub = im[im["Cluster"].astype(str) == cl_str]
-                    for gcol in ["Genes", "Gene"]:
-                        if gcol in sub.columns:
-                            match = sub[sub[gcol].astype(str).str.lower().str.split(";").str[0].str.strip() == gl]
-                            if not match.empty:
-                                int_row = match.iloc[0]
-                                break
-
-                def fmt(val, col, decimals=3):
-                    if val is None:
-                        return "—"
-                    v = val.get(col, None)
-                    if v is None or (isinstance(v, float) and v != v):
-                        return "—"
-                    try:
-                        return f"{float(v):.{decimals}f}"
-                    except (ValueError, TypeError):
-                        return "—"
-
-                det_rate_in  = fmt(det_row, "det_rate_in", 2)
-                det_rate_out = fmt(det_row, "det_rate_out", 2)
-                log2_or      = fmt(det_row, "log2_odds_ratio", 2)
-                det_q        = fmt(det_row, "qvalue", 4)
-                med_int_in   = fmt(int_row, "median_in", 2)
-                log2fc_int   = fmt(int_row, "log2FC_detected_only", 2)
-                int_q        = fmt(int_row, "qvalue", 4)
-
-                lines.append(f"  | {gene} | {det_rate_in} | {det_rate_out} | {log2_or} | {med_int_in} | {log2fc_int} | {det_q} | {int_q} |")
-
+            lines.extend(render_gene_table(custom_proteins, cl_str, dm, im))
             lines.append("")
             lines.append(
                 "  *det_rate: fraction of cells with protein detected (0–1); "
@@ -651,6 +751,26 @@ def main():
                 "log2FC_int: log2 fold change vs other clusters (detected-only, positive=up in cluster); "
                 "— = not tested (below min_cells threshold or gene not matched)*"
             )
+            lines.append("")
+
+        # Cross-cluster reference markers: per-cluster stats for the top
+        # markers of OTHER clusters, so this cluster's own values for a
+        # different cluster's defining genes are always visible even when
+        # those genes never rank among this cluster's own top-N. Purely
+        # data-driven (see cross_ref_union computation above) -- no gene
+        # name is hardcoded for any dataset.
+        if args.cross_cluster_reference and cross_ref_union:
+            own_genes = {g.lower() for g in cluster_top_genes.get(cl_str, [])}
+            other_genes = [g for g in cross_ref_union if g.lower() not in own_genes]
+            if other_genes:
+                lines.append("- **cross-cluster reference markers** (top markers of other "
+                             "clusters in this dataset, shown here for comparison -- a gene "
+                             "being absent from THIS cluster's own top-ranked list above does "
+                             "not mean it was checked and found undetected; these are its "
+                             "actual values for this cluster):")
+                lines.append("")
+                lines.extend(render_gene_table(other_genes, cl_str, dm, im))
+                lines.append("")
 
         lines.append("")
 

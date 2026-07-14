@@ -97,7 +97,12 @@ non-self proteins through any of the following mechanisms:
    this material rather than being a contaminant. Supporting evidence for
    phagocytic uptake includes: enrichment of lysosomal proteins (CTSD, LAMP1,
    LAMP2, SCARB2), proteasome subunits (PSMA/PSMB family), or
-   immunosuppressive markers (ARG1).
+   immunosuppressive markers (ARG1). A lack of a plausible endogenous source
+   for the acquired tissue type (e.g., skin proteins in a brain-derived
+   sample) does not by itself indicate the cluster's cells are inauthentic
+   contaminant material — surgical or procedural handling can introduce
+   foreign tissue at the biopsy/resection site, and immune cells present in
+   that field may genuinely phagocytose it, exactly as described above.
 
 2. **Lytic cell death / NETosis**: Neutrophils undergoing lytic NETosis expel
    their nuclear and granular contents, producing a protein-depleted remnant
@@ -372,9 +377,17 @@ def parse_annotation_table(text: str) -> list[dict]:
                 continue
 
         if in_table and not header_passed:
+            # normal case: a separator row (|---|---|) ends the header
             if all(re.match(r"^[-: ]+$", c) for c in cells if c):
                 header_passed = True
                 continue
+            # some models repeat the header row (or omit the separator entirely).
+            # Skip a duplicated header, but if this is already a data row, accept
+            # it — otherwise every row is dropped and cluster IDs are lost.
+            low = [c.lower() for c in cells]
+            if any("cluster" in c for c in low) and any(("cell" in c or "type" in c) for c in low):
+                continue
+            header_passed = True   # separator was omitted; data starts here
 
         if in_table and header_passed and len(cells) >= 3:
             row = {
@@ -822,12 +835,17 @@ def main():
         base_url = (os.environ.get("ELM_BASE_URL", "").strip()
                     or args.base_url.strip())
 
+        # Long timeout: a local Ollama endpoint on modest hardware (large context,
+        # CPU offload) can take many minutes per call; the client default (600s)
+        # was tripping APITimeoutError on gpt-oss at 64k context. Overridable via
+        # CASPA_LLM_TIMEOUT (seconds).
+        _timeout = float(os.environ.get("CASPA_LLM_TIMEOUT", "3600"))
         if base_url:
-            print(f"Using custom base URL: {base_url}")
-            client = OpenAI(api_key=api_key, base_url=base_url)
+            print(f"Using custom base URL: {base_url}  (timeout={_timeout:.0f}s)")
+            client = OpenAI(api_key=api_key, base_url=base_url, timeout=_timeout, max_retries=2)
         else:
             print("Using default OpenAI endpoint (api.openai.com)")
-            client = OpenAI(api_key=api_key)
+            client = OpenAI(api_key=api_key, timeout=_timeout)
 
     # Guard: when thinking is enabled max_tokens must exceed the budget;
     # bump silently so the Anthropic API doesn't reject the call.
