@@ -449,7 +449,12 @@ def _model_token_cap(model: str):
     (gpt-4o/gpt-5/claude/gemini are all >= the 16000 default)."""
     m = (model or "").lower()
     if "deepseek" in m:
-        return 8192
+        # V3/R1-era DeepSeek caps output at 8192; V4+ supports far more (V4 Pro:
+        # up to 384K) -- only clamp versions actually known to be capped this low.
+        ver = re.search(r"v(\d+)", m)
+        if not ver or int(ver.group(1)) < 4:
+            return 8192
+        return None
     if m.startswith("gpt-4-turbo") or m == "gpt-4":
         return 4096
     return None
