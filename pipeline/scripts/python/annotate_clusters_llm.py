@@ -516,7 +516,13 @@ def _call_llm(client, model: str, system: str, user: str,
                 kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
             else:
                 kwargs["temperature"] = temperature
-            r = client.messages.create(**kwargs)
+            # A large thinking_budget/max_tokens can push the estimated request
+            # duration past the Anthropic SDK's 10-minute non-streaming cutoff,
+            # which raises client-side before any network call is made -- stream
+            # unconditionally and reassemble the final message, rather than only
+            # switching to streaming after first hitting that error.
+            with client.messages.stream(**kwargs) as stream:
+                r = stream.get_final_message()
             text = "".join(b.text for b in r.content
                            if hasattr(b, "type") and b.type == "text")
             return text, r.stop_reason
