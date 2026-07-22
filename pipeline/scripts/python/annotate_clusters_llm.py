@@ -174,13 +174,13 @@ def _extract_experiment_context(prompt_text: str) -> str:
 
 
 def _run_round0(client, model: str, context: str, max_tokens: int,
-                thinking_budget: int = 0) -> str:
+                thinking_budget: int = 0, reasoning_effort: str = "") -> str:
     """Call the LLM with only experiment context (no cluster data) to get Round 0 constraints."""
     print("[Round 0] Generating blind context constraints...")
     text, finish = _call_llm(
         client, model, _ROUND0_SYSTEM, context,
         max_tokens=max_tokens, temperature=0,
-        thinking_budget=thinking_budget,
+        thinking_budget=thinking_budget, reasoning_effort=reasoning_effort,
     )
     print(f"[Round 0] Complete ({len(text):,} chars, finish={finish})")
     return text
@@ -480,7 +480,7 @@ def _extract_token_cap(msg: str):
 
 def _call_llm(client, model: str, system: str, user: str,
               max_tokens: int, temperature: float,
-              thinking_budget: int = 0) -> tuple[str, str]:
+              thinking_budget: int = 0, reasoning_effort: str = "") -> tuple[str, str]:
     """
     Call the LLM using whichever endpoint the model supports.
     Returns (response_text, finish_reason).
@@ -488,6 +488,14 @@ def _call_llm(client, model: str, system: str, user: str,
     Claude models use the Anthropic Messages API.
     All other models use Chat Completions (v1/chat/completions).
     thinking_budget > 0 enables extended thinking for Claude models.
+    reasoning_effort (e.g. "low"/"medium"/"high") is applied two ways depending on
+    endpoint: for GPT-5-class models on the Responses API, as the native
+    `reasoning={"effort": ...}` parameter; for other OpenAI-compatible reasoning
+    models on Chat Completions (e.g. via OpenRouter), as the unified
+    `reasoning.effort` field passed through extra_body (no native kwarg for it).
+    Either way it lets a reasoning-heavy model bound how much of its output budget
+    goes to hidden reasoning vs. the actual answer, instead of silently exhausting
+    max_tokens.
 
     Robustness: if the model rejects max_tokens as too large (e.g. DeepSeek caps
     output at 8192), retry once at the cap it reports rather than failing; and
@@ -513,13 +521,19 @@ def _call_llm(client, model: str, system: str, user: str,
                            if hasattr(b, "type") and b.type == "text")
             return text, r.stop_reason
         if use_responses_api:
-            r = client.responses.create(model=model, instructions=system, input=user,
-                                        max_output_tokens=mt)
+            kwargs = dict(model=model, instructions=system, input=user,
+                          max_output_tokens=mt)
+            if reasoning_effort:
+                kwargs["reasoning"] = {"effort": reasoning_effort}
+            r = client.responses.create(**kwargs)
             return r.output_text, r.status
-        r = client.chat.completions.create(
+        kwargs = dict(
             model=model, max_tokens=mt, temperature=temperature,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}])
+        if reasoning_effort:
+            kwargs["extra_body"] = {"reasoning": {"effort": reasoning_effort}}
+        r = client.chat.completions.create(**kwargs)
         return r.choices[0].message.content, r.choices[0].finish_reason
 
     # Proactively clamp to a known low cap (DeepSeek 8192, gpt-4-turbo 4096) ...
@@ -747,6 +761,10 @@ def main():
     ap.add_argument("--thinking-budget", type=int, default=0,
                     help="Extended thinking token budget for Claude models (0 = disabled). "
                          "Recommended: 8000-16000 for annotation tasks.")
+    ap.add_argument("--reasoning-effort", default="", choices=["", "low", "medium", "high"],
+                    help="OpenRouter unified reasoning.effort for OpenAI-compatible reasoning "
+                         "models ('' = unset/model default). Bounds how much of max_tokens a "
+                         "reasoning model spends on hidden thinking vs. the visible answer.")
     ap.add_argument("--condition-b", action="store_true",
                     help="Enable Condition B prompting: inject 3 generic amendments "
                          "(developmental context, mechanistic threshold, non-self proteins) "
@@ -875,6 +893,7 @@ def main():
             client, args.model, context,
             max_tokens=args.max_tokens,
             thinking_budget=args.thinking_budget,
+            reasoning_effort=args.reasoning_effort,
         )
         round0_path = out_dir / "round0_constraints.md"
         round0_path.write_text(
@@ -963,7 +982,7 @@ def main():
         client, args.model, system_p1,
         context_block + prompt_text,
         args.max_tokens, args.temperature,
-        thinking_budget=args.thinking_budget,
+        thinking_budget=args.thinking_budget, reasoning_effort=args.reasoning_effort,
     )
     (out_dir / "cluster_annotation_raw_pass1.txt").write_text(text_p1, encoding="utf-8")
     print(f"Pass 1 complete ({len(text_p1):,} chars, finish={finish_p1})")
@@ -1085,7 +1104,7 @@ def main():
     text_p2, finish_p2 = _call_llm(
         client, args.model, system_p2, pass2_user,
         args.max_tokens, args.temperature,
-        thinking_budget=args.thinking_budget,
+        thinking_budget=args.thinking_budget, reasoning_effort=args.reasoning_effort,
     )
     (out_dir / "cluster_annotation_raw_pass2.txt").write_text(text_p2, encoding="utf-8")
     print(f"Pass 2 complete ({len(text_p2):,} chars, finish={finish_p2})")
