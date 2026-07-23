@@ -109,6 +109,11 @@ def main():
             if both.sum() >= 10:
                 R[i, j] = np.corrcoef(ci[both], cj[both])[0, 1]
 
+    # A constant (zero-variance) centroid makes corrcoef return NaN; that NaN
+    # would survive into dist_mat and make squareform() raise on its symmetry
+    # check. Treat an undefined correlation as 0 (the initialised value).
+    R = np.nan_to_num(R, nan=0.0)
+
     # Force exact symmetry — floating-point can cause tiny asymmetries that
     # break scipy squareform's symmetry validation
     R = (R + R.T) / 2.0

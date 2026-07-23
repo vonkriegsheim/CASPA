@@ -407,7 +407,9 @@ if (isTRUE(opt$`cluster-cells`) && can_umap && can_igraph) {
 
   # PCA on cells
   pca2 <- prcomp(t(A_z), center=TRUE, scale.=TRUE)
-  pcs <- pca2$x[, 1:20, drop=FALSE]
+  # prcomp yields min(n_cells, n_pathways) PCs; hard-coding 1:20 aborts with
+  # "subscript out of bounds" on small clusters. Take at most the 20 available.
+  pcs <- pca2$x[, seq_len(min(20L, ncol(pca2$x))), drop=FALSE]
 
   # UMAP on PCs
   set.seed(opt$seed)

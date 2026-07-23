@@ -148,6 +148,10 @@ def main():
     else:
         scores = cluster_specificity_score(det, cond_arr, clusters)
 
+    # NaN scores (proteins with NA qvalue/odds-ratio, or NaN from the specificity
+    # score) sort to the FRONT under argsort()[::-1], so the "top markers" shown
+    # would be exactly the ones with missing stats. Treat missing as 0.
+    scores = np.where(np.isfinite(scores), scores, 0.0)
     top_n = min(args.top_n_proteins, det.shape[0])
     top_idx = np.argsort(scores)[::-1][:top_n]
     det_top = det[top_idx, :]

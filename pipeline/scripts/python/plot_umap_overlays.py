@@ -82,12 +82,19 @@ def load_pivot_matrix(pivot_path: str, cell_df: pd.DataFrame):
 
     runs_ordered = cell_df["Run"].astype(str).tolist()
     cols_ordered = [run_to_col.get(r) for r in runs_ordered]
-    valid = [(i, c) for i, c in enumerate(cols_ordered) if c is not None]
-    if not valid:
+    valid_idx = [i for i, c in enumerate(cols_ordered) if c is not None]
+    if not valid_idx:
         return None, [], []
 
-    _, valid_cols = zip(*valid)
-    X = pivot[list(valid_cols)].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+    # Build a full-width matrix aligned 1:1 with cell_df rows (and hence with the
+    # UMAP coordinates): a cell whose run is absent from this pivot (e.g. a
+    # QC-dropped column) becomes an all-NaN column rather than being omitted.
+    # Omitting them made X narrower than the UMAP arrays, so the finite-mask
+    # indexing in scatter_continuous raised IndexError.
+    valid_cols = [cols_ordered[i] for i in valid_idx]
+    Xv = pivot[valid_cols].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+    X = np.full((pivot.shape[0], len(cols_ordered)), np.nan, dtype=float)
+    X[:, valid_idx] = Xv
 
     prot_col = "Protein.Group" if "Protein.Group" in pivot.columns else pivot.columns[0]
     gene_col = "Genes" if "Genes" in pivot.columns else None
@@ -307,7 +314,7 @@ def main():
     umap1   = pd.to_numeric(cell_df["umap_1"], errors="coerce").to_numpy()
     umap2   = pd.to_numeric(cell_df["umap_2"], errors="coerce").to_numpy()
     n_cells = len(cell_df)
-    s = args.dot_size if args.dot_size else max(6.0, min(36.0, 36.0 * np.sqrt(12.0 / n_cells)))
+    s = args.dot_size if args.dot_size else max(6.0, min(36.0, 36.0 * np.sqrt(12.0 / max(n_cells, 1))))
 
     # ---- Load pivot ----
     X, protein_ids, _ = load_pivot_matrix(args.pivot, cell_df)
@@ -421,11 +428,16 @@ def main():
             run_to_auc = {auc_stem_map[c]: c for c in matched_auc}
             runs_ordered = cell_df["Run"].astype(str).tolist()
             auc_cols_ord = [run_to_auc.get(r) for r in runs_ordered]
-            valid_auc = [(i, c) for i, c in enumerate(auc_cols_ord) if c is not None]
+            valid_auc_idx = [i for i, c in enumerate(auc_cols_ord) if c is not None]
 
-            if valid_auc:
-                _, valid_auc_cols = zip(*valid_auc)
-                A = auc[list(valid_auc_cols)].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+            if valid_auc_idx:
+                # Full-width, aligned to cell_df rows (see load_pivot_matrix) so
+                # A[idx, :] lines up with the UMAP coordinates instead of raising
+                # IndexError when some runs are absent from the AUCell table.
+                valid_auc_cols = [auc_cols_ord[i] for i in valid_auc_idx]
+                Av = auc[valid_auc_cols].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+                A = np.full((auc.shape[0], len(auc_cols_ord)), np.nan, dtype=float)
+                A[:, valid_auc_idx] = Av
                 mads = np.nanmedian(np.abs(A - np.nanmedian(A, axis=1, keepdims=True)), axis=1)
                 mads = np.where(np.isfinite(mads), mads, 0.0)
                 top_path_idx = np.argsort(mads)[::-1][:args.top_n_pathways].tolist()

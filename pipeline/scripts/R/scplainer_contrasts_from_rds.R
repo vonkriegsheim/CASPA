@@ -107,11 +107,19 @@ for (g in others) {
   n1 <- rowSums(!is.na(R[, g_cols, drop = FALSE]))
   n0 <- rowSums(!is.na(R[, base_cols, drop = FALSE]))
 
-  # Avoid division by zero / invalid df
-  ok <- (n1 >= 2) & (n0 >= 2) & is.finite(v1) & is.finite(v0)
+  # Degrees-of-freedom-weighted pooled variance — the standard two-sample
+  # pooled-variance estimator. The old unweighted mean (v1+v0)/2 combined with
+  # df = n1+n0-2 followed neither the pooled nor the Welch reference
+  # distribution when n1 != n0, biasing p-values. Guarded so the denominator
+  # (n1+n0-2) is only used where the ok mask below already requires n>=2.
+  denom_df <- (n1 + n0 - 2)
+  sp2 <- ((n1 - 1) * v1 + (n0 - 1) * v0) / denom_df
 
-  # Pooled variance (simple)
-  sp2 <- (v1 + v0) / 2
+  # Avoid division by zero / invalid df. sp2 must be strictly > 0: when the
+  # upstream median-imputation deflates a protein's residual variance to 0, se
+  # becomes 0, t = lfc/0 = Inf and p = 0, fabricating a maximally-significant hit.
+  ok <- (n1 >= 2) & (n0 >= 2) & is.finite(v1) & is.finite(v0) &
+        (denom_df > 0) & is.finite(sp2) & (sp2 > 0)
 
   se <- rep(NA_real_, length(lfc))
   se[ok] <- sqrt(sp2[ok] * (1 / n1[ok] + 1 / n0[ok]))

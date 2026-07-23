@@ -91,7 +91,7 @@ def main():
     cluster = df.get("cluster_id", pd.Series(["unknown"] * len(df))).fillna("unknown").tolist()
 
     n_cells = len(df)
-    s = max(6.0, min(40.0, 40.0 * np.sqrt(12.0 / n_cells)))
+    s = max(6.0, min(40.0, 40.0 * np.sqrt(12.0 / max(n_cells, 1))))
 
     # ---- Report metadata ----
     batch_applied = False

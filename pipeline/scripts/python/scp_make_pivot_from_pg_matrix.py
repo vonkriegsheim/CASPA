@@ -53,9 +53,15 @@ def main():
     ap.add_argument("--out-pivot", required=True, help="Output pivot TSV (log2+median-normalised)")
     ap.add_argument("--out-shifts", required=True, help="Output per-run shift TSV")
     ap.add_argument("--out-report", required=True, help="Output JSON report")
-    ap.add_argument("--zero-is-missing", action="store_true", default=True)
-    ap.add_argument("--log-transform", action="store_true", default=True, help="Apply log2(x+1) to linear pg_matrix")
-    ap.add_argument("--median-normalise", action="store_true", default=True)
+    # These default ON (the correct scientific default). Made negatable so a step
+    # can actually be turned off for debugging — as plain store_true+default=True
+    # they were permanently on and the flag did nothing.
+    ap.add_argument("--zero-is-missing", action=argparse.BooleanOptionalAction, default=True,
+                    help="Treat 0 intensities as missing (--no-zero-is-missing to keep them)")
+    ap.add_argument("--log-transform", action=argparse.BooleanOptionalAction, default=True,
+                    help="Apply log2(x+1) to linear pg_matrix (--no-log-transform to disable)")
+    ap.add_argument("--median-normalise", action=argparse.BooleanOptionalAction, default=True,
+                    help="Per-run median-normalise in log space (--no-median-normalise to disable)")
     args = ap.parse_args()
 
     # manifest: autodetect delimiter
@@ -104,16 +110,32 @@ def main():
         X = X[keep]
         mat = mat.iloc[keep].reset_index(drop=True)
 
-    # Auto-detect intensity scale and apply log2(x+1) if needed
+    # Auto-detect intensity scale and apply log2(x+1) if needed.
+    # Raw MS intensities are large, strictly non-negative numbers (maxima
+    # routinely 1e6-1e10); log2-transformed values are small and bounded
+    # (log2(1e12) ~= 40) and can be negative for intensities < 1. The old test
+    # (p95 > 25) misfired: high-abundance proteins in a genuinely log2 matrix
+    # reach 25-33, so such a matrix was re-logged, corrupting every fold-change.
+    # Decide on the extremes instead — no realistic log2 proteomics value
+    # approaches 2^6 = 64, while linear intensities dwarf it; and any negative
+    # value is a definitive sign the data are already log-scale.
     finite_vals = X[np.isfinite(X)]
-    p95 = float(np.percentile(finite_vals, 95)) if finite_vals.size > 0 else 0.0
+    if finite_vals.size > 0:
+        vmax = float(np.max(finite_vals))
+        vmin = float(np.min(finite_vals))
+        p95  = float(np.percentile(finite_vals, 95))
+    else:
+        vmax = vmin = p95 = 0.0
+    looks_linear = finite_vals.size > 0 and vmin >= 0.0 and vmax > 64.0
     if args.log_transform:
-        if finite_vals.size > 0 and p95 > 25:
-            print(f"Detected linear-scale intensities (p95={p95:.1f}), applying log2(x+1).")
+        if looks_linear:
+            print(f"Detected linear-scale intensities (max={vmax:.3g}, p95={p95:.1f}), "
+                  "applying log2(x+1).")
             X_log = np.where(np.isnan(X), np.nan, np.log2(X + 1.0))
             autodetect_decision = "linear_to_log2"
         else:
-            print(f"Intensities appear log-transformed (p95={p95:.1f}), using as-is.")
+            print(f"Intensities appear log-transformed (max={vmax:.3g}, vmin={vmin:.3g}), "
+                  "using as-is.")
             X_log = X.copy()
             autodetect_decision = "already_log"
     else:

@@ -74,7 +74,10 @@ if ("protein_group" %in% colnames(rowData(sce))) {
 out_df <- data.frame(Protein.Group = pg_labels, check.names = FALSE)
 
 if ("genes" %in% colnames(rowData(sce))) {
-  out_df$Genes <- rowData(sce)$genes[match(rownames(corrected), rowData(sce)$protein_group)]
+  # Match on rownames(sce) (the semicolon-safe ids that rownames(corrected)
+  # carries), not on $protein_group (original ids that still contain ';').
+  # Matching on the original ids returns NA for every multi-protein group.
+  out_df$Genes <- rowData(sce)$genes[match(rownames(corrected), rownames(sce))]
 }
 
 # Sample columns: use sample_id (run stems) as headers for consistency with pivot_pack

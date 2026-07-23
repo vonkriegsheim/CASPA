@@ -278,15 +278,20 @@ def main():
     # centre proteins
     X_det = X_det - X_det.mean(axis=1, keepdims=True)
 
-    # PCA in sample space (cells x proteins)
-    pc_int, sv_int = pca_svd(X_int.T, n_components=min(args.n_pcs_int, n_cells - 1))
-    pc_det, sv_det = pca_svd(X_det.T, n_components=min(args.n_pcs_det, n_cells - 1))
-
-    # balance blocks
-    pc_int = standardise_block(pc_int)
-    pc_det = standardise_block(pc_det)
-
-    Z = np.concatenate([pc_int, pc_det], axis=1)
+    # PCA in sample space (cells x proteins). n_pcs_*=0 drops that modality — this
+    # enables the embedding-ablation benchmark (EXP2/R1-S2): intensity-only
+    # ("logFC only"), detection-only ("presence only"), or joint (both).
+    blocks = []
+    pc_int = pc_det = None
+    if args.n_pcs_int > 0:
+        pc_int, _ = pca_svd(X_int.T, n_components=min(args.n_pcs_int, n_cells - 1))
+        blocks.append(standardise_block(pc_int))
+    if args.n_pcs_det > 0:
+        pc_det, _ = pca_svd(X_det.T, n_components=min(args.n_pcs_det, n_cells - 1))
+        blocks.append(standardise_block(pc_det))
+    if not blocks:
+        raise SystemExit("Need n_pcs_int>0 and/or n_pcs_det>0 (both are 0).")
+    Z = np.concatenate(blocks, axis=1)
     Z = standardise_block(Z)
 
     # ---- optional Harmony batch correction (adaptive theta) ----
@@ -325,7 +330,7 @@ def main():
         ad = sc.AnnData(X=Z_out)
         ad.obs_names = pd.Index(runs)
         ad.obs["Library"] = pd.Categorical(libs)
-        n_neigh = min(args.n_neighbors, max(3, n_cells - 1))
+        n_neigh = min(args.n_neighbors, max(1, n_cells - 1))
         sc.pp.neighbors(ad, n_neighbors=n_neigh, use_rep="X", random_state=args.seed)
         sc.tl.umap(ad, random_state=args.seed)
         sc.tl.leiden(ad, resolution=args.leiden_resolution, random_state=args.seed,
@@ -409,7 +414,7 @@ def main():
     else:
         adata = sc.AnnData(X=Z_use)
         adata.obs_names = pd.Index(runs)
-        n_neighbors = min(args.n_neighbors, max(3, n_cells - 1))
+        n_neighbors = min(args.n_neighbors, max(1, n_cells - 1))
         sc.pp.neighbors(adata, n_neighbors=n_neighbors, use_rep="X", random_state=args.seed)
         sc.tl.umap(adata, random_state=args.seed)
         sc.tl.leiden(adata, resolution=args.leiden_resolution, random_state=args.seed,
@@ -473,7 +478,7 @@ def main():
         import scanpy as _sc2
         _adata_pre = _sc2.AnnData(X=Z_precorrect)
         _adata_pre.obs_names = pd.Index(runs)
-        _sc2.pp.neighbors(_adata_pre, n_neighbors=min(args.n_neighbors, max(3, n_cells - 1)),
+        _sc2.pp.neighbors(_adata_pre, n_neighbors=min(args.n_neighbors, max(1, n_cells - 1)),
                           use_rep="X", random_state=args.seed)
         _sc2.tl.umap(_adata_pre, random_state=args.seed)
         um_pre = _adata_pre.obsm["X_umap"]
@@ -509,7 +514,7 @@ def main():
         "params": {
             "n_pcs_int": args.n_pcs_int,
             "n_pcs_det": args.n_pcs_det,
-            "n_neighbors": min(args.n_neighbors, max(3, n_cells - 1)),
+            "n_neighbors": min(args.n_neighbors, max(1, n_cells - 1)),
             "leiden_resolution": args.leiden_resolution,
             "min_cluster_size": args.min_cluster_size,
             "seed": args.seed,
@@ -561,25 +566,27 @@ def main():
     plt.savefig(qc_dir / f"umap_by_n_detected.{plot_ext}", bbox_inches="tight")
     plt.close()
 
-    # PCA intensity block (PC1/PC2) - square, adaptive dots
-    fig, ax = plt.subplots(figsize=figsize_sq)
-    ax.scatter(pc_int[:, 0], pc_int[:, 1], s=s_use, alpha=0.80, linewidths=0)
-    ax.set_title("Intensity PCA block (PC1/PC2)")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.set_aspect("equal", adjustable="datalim")
-    plt.savefig(qc_dir / f"pca_intensity.{plot_ext}", bbox_inches="tight")
-    plt.close(fig)
+    # PCA intensity block (PC1/PC2) - square, adaptive dots (skip if modality dropped)
+    if pc_int is not None:
+        fig, ax = plt.subplots(figsize=figsize_sq)
+        ax.scatter(pc_int[:, 0], pc_int[:, 1], s=s_use, alpha=0.80, linewidths=0)
+        ax.set_title("Intensity PCA block (PC1/PC2)")
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+        ax.set_aspect("equal", adjustable="datalim")
+        plt.savefig(qc_dir / f"pca_intensity.{plot_ext}", bbox_inches="tight")
+        plt.close(fig)
 
-    # PCA detection block
-    fig, ax = plt.subplots(figsize=figsize_sq)
-    ax.scatter(pc_det[:, 0], pc_det[:, 1], s=s_use, alpha=0.80, linewidths=0)
-    ax.set_title("Detection PCA block (PC1/PC2)")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.set_aspect("equal", adjustable="datalim")
-    plt.savefig(qc_dir / f"pca_detection.{plot_ext}", bbox_inches="tight")
-    plt.close(fig)
+    # PCA detection block (skip if modality dropped)
+    if pc_det is not None:
+        fig, ax = plt.subplots(figsize=figsize_sq)
+        ax.scatter(pc_det[:, 0], pc_det[:, 1], s=s_use, alpha=0.80, linewidths=0)
+        ax.set_title("Detection PCA block (PC1/PC2)")
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+        ax.set_aspect("equal", adjustable="datalim")
+        plt.savefig(qc_dir / f"pca_detection.{plot_ext}", bbox_inches="tight")
+        plt.close(fig)
 
 
     print(f"Done. Clusters={len(final_sizes)} baseline={baseline}; outputs -> {outdir}")

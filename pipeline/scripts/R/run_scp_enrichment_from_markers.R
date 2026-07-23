@@ -376,6 +376,13 @@ if (can_go && !is.null(OrgDb) && length(bg_entrez) > 0) {
           OrgDb = OrgDb,
           ont = opt[["go-ont"]],
           keyType = "ENTREZID",
+          # Return the full ranked table. enrichGO defaults to pvalueCutoff=0.05,
+          # qvalueCutoff=0.2, which would pre-truncate `df` — making the "_ALL"
+          # file incomplete and, worse, silently dropping terms with p<0.05 but
+          # q>0.2 from the "_P" (nominal p) table derived below. The _FDR/_P/_ALL
+          # split is applied explicitly from `df`, so cut nothing here.
+          pvalueCutoff = 1,
+          qvalueCutoff = 1,
           readable = TRUE
         ),
         error = function(e) NULL

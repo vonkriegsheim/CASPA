@@ -354,7 +354,12 @@ rule scp_llm_annotation:
         max_tokens       = _c("scp", "llm", "max_tokens",        default=16000),
     run:
         if params.api_key:
-            os.environ["ELM_API_KEY"] = params.api_key
+            # Route the configured key to the env var the chosen provider reads.
+            # The Claude path reads ANTHROPIC_API_KEY; everything else reads
+            # ELM_API_KEY. Writing only ELM_API_KEY (the old behaviour) meant a
+            # GUI-configured Claude key was silently ignored and annotation skipped.
+            key_env = "ANTHROPIC_API_KEY" if params.provider == "claude" else "ELM_API_KEY"
+            os.environ[key_env] = params.api_key
         # Write the experiment context to a file rather than passing it as a shell
         # argument. A description containing quotes or non-ASCII characters would
         # otherwise break shell arg-parsing and silently drop the --model argument
@@ -371,11 +376,11 @@ rule scp_llm_annotation:
             f" --pivot        {{input.pivot}}"
             f" --annotation   {{input.annotation}}"
             f" --out-tsv      {{output.annotations}}"
-            f" --species      {{params.species}}"
+            f" --species      \"{{params.species}}\""
             f" --experiment-context-file {ctx_file}"
-            f" --model        {{params.model}}"
+            f" --model        \"{{params.model}}\""
             f" --base-url     \"{{params.base_url}}\""
-            f" --provider     {{params.provider}}"
+            f" --provider     \"{{params.provider}}\""
             f" --max-tokens   {{params.max_tokens}}"
             f" --out-dir      scp/llm"
             f"{cond_b_flag}"

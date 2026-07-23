@@ -18,6 +18,7 @@ deterministic, run.py arranges the subprocess PATH so:
 import argparse
 import glob
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -50,7 +51,12 @@ def _native_rscript_dir():
                   "/Library/Frameworks/R.framework/Resources/bin"):
             if os.path.exists(os.path.join(c, "Rscript")) and not _is_conda_r(c):
                 bins.append(c)
-    bins.sort(reverse=True)        # highest R-x.y.z dir first (Windows)
+    def _ver_key(p):
+        # Sort by numeric R version, not lexically: a plain string sort ranks
+        # "R-4.9.0" above "R-4.10.0" and would pick the older R.
+        m = re.search(r"[Rr]-(\d+)\.(\d+)\.(\d+)", p.replace("\\", "/"))
+        return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+    bins.sort(key=_ver_key, reverse=True)   # highest R-x.y.z dir first (Windows)
     return bins[0] if bins else None
 
 
@@ -139,8 +145,9 @@ def parse_args():
                    help="Snakemake dry-run: print rules without executing")
     p.add_argument("--keep-going", "-k", action="store_true",
                    help="Continue running independent rules after a failure")
-    p.add_argument("--rerun-incomplete", action="store_true", default=True,
-                   help="Re-run rules with incomplete output (default: True)")
+    p.add_argument("--rerun-incomplete", action=argparse.BooleanOptionalAction, default=True,
+                   help="Re-run rules with incomplete output (default: on; "
+                        "--no-rerun-incomplete to disable)")
     p.add_argument("--target", metavar="RULE_OR_FILE", default=None,
                    help="Run up to a specific rule or output file instead of 'all'")
     p.add_argument("--snakemake-args", nargs=argparse.REMAINDER, default=[],

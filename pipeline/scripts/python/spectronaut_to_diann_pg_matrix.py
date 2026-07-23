@@ -192,7 +192,12 @@ def main():
         # Filtering
         # --------------------------
         if args.remove_decoys:
-            df = df[df["EG.IsDecoy"] == False]
+            # Robust across dtypes: EG.IsDecoy may arrive as bool or as the
+            # strings "True"/"False". A bare `== False` silently matches nothing
+            # (dropping every row) when the column is object-typed. Mirror the
+            # boolean handling used elsewhere in this file.
+            is_decoy = df["EG.IsDecoy"].astype(str).str.strip().str.upper().isin(["TRUE", "1"])
+            df = df[~is_decoy]
             if args.debug:
                 print(f"[DEBUG] after remove-decoys: {df.shape[0]:,} rows")
 
@@ -397,7 +402,11 @@ def main():
             "error": str(e),
             "runtime_seconds": round(time.time() - t0, 3),
         })
-        return 0
+        # Exit non-zero so Snakemake halts the run. Returning 0 here made a
+        # conversion failure look like success and fed a header-only pg_matrix
+        # into every downstream SCP rule (QC/clustering on zero proteins).
+        print(f"ERROR: Spectronaut conversion failed: {e}", file=sys.stderr)
+        return 1
 
     return 0
 

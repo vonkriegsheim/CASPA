@@ -15,6 +15,7 @@ warnings (the packages are installed; PATH is a per-shell concern), not failures
 import argparse
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -80,7 +81,14 @@ def find_rscript(override=None):
         if p.is_dir():
             candidates += [d / "bin" / "Rscript.exe" for d in p.glob("R-*")
                            if (d / "bin" / "Rscript.exe").exists()]
-    return str(sorted(candidates)[-1]) if candidates else None
+    if not candidates:
+        return None
+
+    def _ver_key(path):
+        # Numeric version sort — lexical sort ranks R-4.9.0 above R-4.10.0.
+        m = re.search(r"[Rr]-(\d+)\.(\d+)\.(\d+)", str(path).replace("\\", "/"))
+        return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+    return str(max(candidates, key=_ver_key))
 
 
 def check_python():

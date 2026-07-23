@@ -104,7 +104,9 @@ def plot_modality(df: pd.DataFrame, fc_col: str, pval_col: str, label_col: str,
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    clusters = sorted(df[cluster_col].unique())
+    # Coerce to str before sorting: a blank Cluster cell is float('nan'), and
+    # sorting a mix of str and nan raises TypeError.
+    clusters = sorted(df[cluster_col].dropna().astype(str).unique())
     n_cl = len(clusters)
     if n_cl == 0:
         print(f"  No clusters in data for {out_path.name} — skipping.")
