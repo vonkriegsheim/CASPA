@@ -141,6 +141,15 @@ python caspa/init.py \
     --name "My Experiment"
 ```
 
+**Spectronaut users:** export your report using the bundled
+[`directLFQfragmentOutput.rs`](directLFQfragmentOutput.rs) report scheme
+(**Report → Import Scheme** in Spectronaut) to guarantee the export has the exact
+columns CASPA's converter (`pipeline/scripts/python/spectronaut_to_diann_pg_matrix.py`)
+requires (`PG.ProteinGroups`, `PEP.StrippedSequence`, `FG.Quantity`, etc. — the
+full list is enforced at conversion time, with a clear error naming any missing
+column). Building a custom export scheme by hand is error-prone; importing this
+one avoids that entirely.
+
 This creates:
 - `config/caspa.json` — pre-filled with your input path and species
 - `config/ms_inputs.tsv` — sample sheet (auto-populated from pg_matrix column headers)
