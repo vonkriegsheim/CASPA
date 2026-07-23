@@ -4,6 +4,10 @@ Standalone Snakemake pipeline for single-cell proteomics analysis. Takes a
 pre-exported protein-group matrix (DIA-NN, FragPipe) **or** a raw Spectronaut
 long-format TSV. No bulk pipeline dependency.
 
+**New to CASPA?** [Follow the tutorial](docs/TUTORIAL.md) — a complete first run
+on a bundled example dataset, so you can confirm your install works (and see
+what a normal run looks like) before pointing CASPA at your own data.
+
 ---
 
 ## Quick start
