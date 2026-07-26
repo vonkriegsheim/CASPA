@@ -316,16 +316,33 @@ rule scp_cluster_summary:
         summary = "scp/llm/cluster_summary.tsv",
         prompt  = "scp/llm/cluster_llm_prompt.md",
     params:
-        custom_proteins = _c("scp", "custom_proteins", default=""),
+        custom_proteins   = _c("scp", "custom_proteins", default=""),
+        marker_modalities = _c("scp", "llm", "marker_modalities",
+                               default=["detection", "intensity", "scplainer"]),
     run:
         cp_arg = f' --custom-proteins "{params.custom_proteins}"' if params.custom_proteins else ""
+        # Which marker modalities to show the LLM annotator. Defaults to all
+        # three (unchanged pipeline behaviour). Restricting this is a
+        # DIAGNOSTIC/sensitivity-check tool, not a "pick the best modality"
+        # setting -- an ablation across 4 datasets found the effect of
+        # dropping a modality is dataset- and cluster-specific with no
+        # universally-best subset (paperReview/response/figures/generated/
+        # FigS4_leaveoneout_detail.pdf); changing this from the default is
+        # only recommended to check whether a specific hard cluster's call
+        # is sensitive to conflicting cross-modality evidence.
+        mods = params.marker_modalities
+        mod_args = ""
+        if "detection" in mods:
+            mod_args += f" --detection-markers {{input.det_markers}}"
+        if "intensity" in mods:
+            mod_args += f" --intensity-markers {{input.int_markers}}"
+        if "scplainer" in mods:
+            mod_args += f" --scplainer-markers {{input.scp_markers}}"
         shell(
             f"python {PY}/make_cluster_summary.py"
             f" --annotation        {{input.annotation}}"
             f" --assignments       {{input.assignments}}"
-            f" --detection-markers {{input.det_markers}}"
-            f" --intensity-markers {{input.int_markers}}"
-            f" --scplainer-markers {{input.scp_markers}}"
+            f"{mod_args}"
             f" --aucell-scores     {{input.aucell}}"
             f" --consensus-markers {{input.consensus}}"
             f" --out               {{output.summary}}"

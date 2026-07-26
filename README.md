@@ -421,6 +421,7 @@ Override any key in `config/caspa.json`.
 | `joint_embedding.harmony_batch_key` | `Batch` | Column in ms_inputs.tsv for batch correction |
 | `custom_proteins` | `""` | Comma-separated gene names for custom UMAP overlays |
 | `llm.model` | `gpt-4o` | OpenAI model for cell type annotation |
+| `llm.marker_modalities` | `["detection","intensity","scplainer"]` | Which marker-mining modalities to show the LLM annotator (see below) |
 
 ### Plot parameters (`plots.*`)
 
@@ -428,6 +429,30 @@ Override any key in `config/caspa.json`.
 |-----|---------|-------------|
 | `formats` | `["pdf","png"]` | Output formats |
 | `adj_pval` | 0.05 | Adjusted p-value cutoff for volcano labels |
+
+---
+
+### `llm.marker_modalities`: a diagnostic tool, not a "best modality" setting
+
+CASPA's marker-mining step produces three independent evidence layers per
+cluster — detection rate, intensity fold-change, and scplainer's
+batch-corrected contrasts — and by default shows the LLM annotator all
+three. `scp.llm.marker_modalities` lets you restrict which of
+`"detection"`, `"intensity"`, `"scplainer"` are included in the prompt.
+
+This exists as a **sensitivity check**, not a recommended alternative
+default. A leave-one-out ablation across four datasets found that
+restricting to a single modality can flip the call on an individual
+hard/ambiguous cluster, but the *direction* of the effect is
+dataset-specific — detection-only data resolved one dataset's hardest
+cluster, while for a different dataset the same restriction broke a call
+that the full evidence set got right. There is no modality subset that is
+universally better; see `paperReview/response/figures/regenerate_figS4_leaveoneout.py`
+for the full analysis. If an annotation looks wrong on a specific
+cluster and you suspect it's being swayed by conflicting evidence across
+modalities, re-running `scp_cluster_summary` with a restricted
+`marker_modalities` list is a way to check that hypothesis on that one
+cluster — not something to leave configured for a full production run.
 
 ---
 
