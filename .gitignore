@@ -42,3 +42,6 @@ Thumbs.db
 # ELM API key for paper-revision experiments (never commit)
 parperReview/response/.elm_key
 paperReview/response/.elm_key
+~$*
+paperReview/
+poster/

@@ -296,12 +296,27 @@ rule scp_consensus_markers:
         scplainer  = "scp/markers/scplainer_intensity_markers.tsv",
     output:
         consensus = "scp/markers/consensus_markers.tsv",
-    shell:
-        "python {PY}/make_consensus_markers.py"
-        " --detection  {input.detection}"
-        " --intensity  {input.intensity}"
-        " --scplainer  {input.scplainer}"
-        " --out        {output.consensus}"
+    params:
+        marker_modalities = _c("scp", "llm", "marker_modalities",
+                               default=["detection", "intensity", "scplainer", "aucell"]),
+    run:
+        # The consensus ranking must be built ONLY from the modalities the LLM
+        # is allowed to see: building it from all three and then restricting
+        # marker_modalities would leak the excluded modality's evidence into
+        # the prompt through the consensus column.
+        mods = params.marker_modalities
+        args = ""
+        if "detection" in mods:
+            args += f" --detection-markers {{input.detection}}"
+        if "intensity" in mods:
+            args += f" --intensity-markers {{input.intensity}}"
+        if "scplainer" in mods:
+            args += f" --scplainer-markers {{input.scplainer}}"
+        shell(
+            f"python {PY}/make_consensus_markers.py"
+            f"{args}"
+            f" --out {{output.consensus}}"
+        )
 
 rule scp_cluster_summary:
     input:
@@ -318,7 +333,8 @@ rule scp_cluster_summary:
     params:
         custom_proteins   = _c("scp", "custom_proteins", default=""),
         marker_modalities = _c("scp", "llm", "marker_modalities",
-                               default=["detection", "intensity", "scplainer"]),
+                               default=["detection", "intensity", "scplainer", "aucell"]),
+        cross_cluster_ref = _c("scp", "llm", "cross_cluster_reference", default=False),
     run:
         cp_arg = f' --custom-proteins "{params.custom_proteins}"' if params.custom_proteins else ""
         # Which marker modalities to show the LLM annotator. Defaults to all
@@ -331,6 +347,7 @@ rule scp_cluster_summary:
         # only recommended to check whether a specific hard cluster's call
         # is sensitive to conflicting cross-modality evidence.
         mods = params.marker_modalities
+        core = [m for m in ("detection", "intensity", "scplainer") if m in mods]
         mod_args = ""
         if "detection" in mods:
             mod_args += f" --detection-markers {{input.det_markers}}"
@@ -338,13 +355,22 @@ rule scp_cluster_summary:
             mod_args += f" --intensity-markers {{input.int_markers}}"
         if "scplainer" in mods:
             mod_args += f" --scplainer-markers {{input.scp_markers}}"
+        if "aucell" in mods:
+            mod_args += f" --aucell-scores {{input.aucell}}"
+        # A consensus of one modality is that modality's own ranking; pass it
+        # only when it genuinely combines evidence.
+        if len(core) >= 2:
+            mod_args += f" --consensus-markers {{input.consensus}}"
+        # Off by default: measured to reinforce wrong calls when neighbouring
+        # clusters' markers dominate (skin tumour C2, 20/20 -> 5/20). See the
+        # comment block in make_cluster_summary.py.
+        if params.cross_cluster_ref:
+            mod_args += " --cross-cluster-reference"
         shell(
             f"python {PY}/make_cluster_summary.py"
             f" --annotation        {{input.annotation}}"
             f" --assignments       {{input.assignments}}"
             f"{mod_args}"
-            f" --aucell-scores     {{input.aucell}}"
-            f" --consensus-markers {{input.consensus}}"
             f" --out               {{output.summary}}"
             f" --llm-export        {{output.prompt}}"
             f" --top-n-markers     15"

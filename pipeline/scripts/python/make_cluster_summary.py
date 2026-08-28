@@ -164,16 +164,40 @@ def main():
                     help="Comma-separated gene names (or path to txt file, one gene per line) "
                          "that are biologically meaningful to the researcher. "
                          "Included verbatim in the LLM prompt as researcher-provided markers.")
+    # DEFAULT OFF as of 2026-08-25. This panel shows each cluster its own values
+    # for the top markers of OTHER clusters, so that evidence for an alternative
+    # lineage is not hidden merely because those genes did not rank in this
+    # cluster's own top-N. It demonstrably helps where the surfaced genes are
+    # significant in the receiving cluster (skin-tumour C0: 15/20 -> 20/20 correct
+    # over 20 blind replicates).
+    #
+    # But it surfaces genes regardless of whether they support or contradict, and
+    # where the contradicting evidence is the stronger, it does real harm: on
+    # skin-tumour C2 (a macrophage carrying phagocytosed keratinocyte cargo) the
+    # panel injects C3/C6's keratins at 100% detection with q as low as 7e-4,
+    # against immune markers that are mostly non-significant. C2 falls from 20/20
+    # to 5/20 correct (Fisher exact p = 7.7e-7), and pooled accuracy over all 7
+    # clusters drops from 134/140 to 123/140.
+    #
+    # It was originally shipped default-on after a single blind validation run
+    # that could not have detected this: it was run only on the full-modality
+    # prompt, where C2 already fails for unrelated reasons, so "C2 unchanged"
+    # read as a no-op rather than as damage.
+    #
+    # Re-enable per run with --cross-cluster-reference once the panel carries
+    # source-cluster provenance, so contradicting markers arrive labelled rather
+    # than anonymous.
     ap.add_argument("--cross-cluster-reference", dest="cross_cluster_reference",
-                    action="store_true", default=True,
+                    action="store_true", default=False,
                     help="For each cluster, also show per-cluster stats for the top consensus "
                          "markers of OTHER clusters (data-driven, no hardcoded gene list). "
-                         "Prevents a cluster whose own top markers happen to be dominated by one "
-                         "modality/lineage from having its evidence for an alternative lineage go "
-                         "unshown simply because that lineage's canonical genes did not rank "
-                         "among this cluster's own top-N. Default: on.")
+                         "Surfaces evidence for an alternative lineage that would otherwise be "
+                         "hidden because those genes did not rank among this cluster's own top-N. "
+                         "Default: OFF -- it can reinforce a wrong call when the cross-cluster "
+                         "markers it surfaces are more significant than the correct lineage's.")
     ap.add_argument("--no-cross-cluster-reference", dest="cross_cluster_reference",
-                    action="store_false")
+                    action="store_false",
+                    help="Explicitly disable the cross-cluster reference panel (already the default).")
     ap.add_argument("--cross-cluster-top-n", type=int, default=2,
                     help="How many top consensus markers to take from each cluster when building "
                          "the cross-cluster reference gene set (default 2).")

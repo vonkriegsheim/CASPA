@@ -764,6 +764,11 @@ def main():
                          "Default: pipeline/assets/panglaodb_markers.tsv.gz beside script.")
     ap.add_argument("--provider",   default="openai", choices=["openai", "claude"],
                     help="LLM provider: 'openai' (default) or 'claude' (Anthropic).")
+    ap.add_argument("--round0-file", default="",
+                    help="Reuse a previously generated Round 0 constraints file instead of "
+                         "making a fresh Round 0 call. Round 0 depends only on the experiment "
+                         "context, so this holds it fixed across runs that vary something else "
+                         "(e.g. marker modalities) and allows offline prompt re-rendering.")
     ap.add_argument("--thinking-budget", type=int, default=0,
                     help="Extended thinking token budget for Claude models (0 = disabled). "
                          "Recommended: 8000-16000 for annotation tasks.")
@@ -895,12 +900,25 @@ def main():
     # ---- Condition B: Round 0 + generic amendments ----
     if args.condition_b:
         context = _extract_experiment_context(prompt_text)
-        round0_text = _run_round0(
-            client, args.model, context,
-            max_tokens=args.max_tokens,
-            thinking_budget=args.thinking_budget,
-            reasoning_effort=args.reasoning_effort,
-        )
+        if args.round0_file:
+            # Reuse a previously generated Round 0 rather than calling the model
+            # again. Round 0 is derived from the experiment context alone, before
+            # any cluster data is seen, so it is by construction identical across
+            # marker-modality variants of the same dataset; reusing it holds that
+            # stage fixed when the point of the run is to vary something else. It
+            # also allows a prompt to be re-rendered with no API call at all.
+            raw = Path(args.round0_file).read_text(encoding="utf-8")
+            round0_text = re.sub(r"\A# Round 0 constraints[^\n]*\n+(?:\*[^\n]*\*\n)*",
+                                 "", raw).strip()
+            print(f"Round 0: reusing {args.round0_file} "
+                  f"({len(round0_text):,} chars, no API call)")
+        else:
+            round0_text = _run_round0(
+                client, args.model, context,
+                max_tokens=args.max_tokens,
+                thinking_budget=args.thinking_budget,
+                reasoning_effort=args.reasoning_effort,
+            )
         round0_path = out_dir / "round0_constraints.md"
         round0_path.write_text(
             f"# Round 0 constraints (auto-generated)\n\n"
