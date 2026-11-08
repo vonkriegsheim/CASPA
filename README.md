@@ -518,14 +518,16 @@ human + mouse) before the LLM call, providing an independent evidence layer.
 
 ## Tests
 
- holds unit and end-to-end tests (plain , also pytest-compatible):
+`tests/` holds unit and end-to-end tests (plain `unittest`, also pytest-compatible):
 the Bernoulli GLM-PCA fit, the embedding script in all three detection-embedding
-modes (skipped unless / point at a
- and  from a pipeline run), and the LLM
+modes (skipped unless `CASPA_TEST_PIVOT` and `CASPA_TEST_MANIFEST` point at a
+`pivot_pack.tsv` and `filtered.manifest.tsv` from a pipeline run), and the LLM
 annotation step driven through a mock OpenAI-compatible server covering every
 failure path (missing key, empty response, truncated or incomplete tables).
 
-
+```bash
+python -m unittest discover -s tests -v
+```
 
 ---
 
