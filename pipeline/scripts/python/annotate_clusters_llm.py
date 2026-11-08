@@ -411,6 +411,46 @@ def parse_annotation_table(text: str) -> list[dict]:
     return rows
 
 
+def expected_cluster_ids(prompt_text: str) -> list[str]:
+    """Cluster identifiers announced in the prompt ('## Cluster C3' headers)."""
+    return re.findall(r"^## Cluster\s+(\S+)", prompt_text, flags=re.MULTILINE)
+
+
+def check_annotation_completeness(rows: list[dict], expected: list[str],
+                                  allow_incomplete: bool = False, stage: str = "") -> list[str]:
+    """
+    Every cluster in the prompt must receive a non-empty cell-type call.
+    Returns the list of problems; raises SystemExit(2) unless allow_incomplete.
+    """
+    problems = []
+    if not rows:
+        problems.append("no annotation table could be parsed from the model output")
+    got = {str(r.get("Cluster", "")).strip(): r for r in rows}
+    missing = [c for c in expected if c not in got]
+    if missing:
+        problems.append(f"{len(missing)} of {len(expected)} clusters have no row: "
+                        + ", ".join(missing))
+    placeholder = {"na", "n/a", "none", "-", "unknown", ""}
+    empty = [c for c, r in got.items()
+             if str(r.get("cell_type", "")).strip().lower() in placeholder]
+    if empty:
+        problems.append(f"{len(empty)} cluster(s) have an empty cell-type call: "
+                        + ", ".join(empty))
+    if problems:
+        where = f" after {stage}" if stage else ""
+        msg = (f"incomplete LLM annotation{where}: " + "; ".join(problems)
+               + ". The raw model output is kept next to the annotation table for "
+                 "inspection. Likely causes: truncated output (raise scp.llm.max_tokens), "
+                 "a model that did not follow the table format, or a provider error. Set "
+                 "scp.llm.allow_incomplete to true to write the partial table anyway.")
+        if allow_incomplete:
+            print("WARNING: " + msg, file=sys.stderr)
+        else:
+            print("ERROR: " + msg, file=sys.stderr)
+            raise SystemExit(2)
+    return problems
+
+
 def parse_requested_markers(text: str) -> list[str]:
     """
     Extract the list of additional markers the LLM says it needs.
@@ -560,6 +600,10 @@ def _call_llm(client, model: str, system: str, user: str,
         else:
             raise
 
+    if not (text or "").strip():
+        raise RuntimeError(
+            f"{model} returned an empty response (finish={finish}). The annotation "
+            f"cannot proceed; check the provider, model name, API key and quota.")
     if str(finish).lower() in _TRUNCATED_FINISHES:
         print(f"WARNING: {model} response was truncated (finish={finish}). The "
               f"annotation may be incomplete — raise scp.llm.max_tokens (currently "
@@ -728,6 +772,23 @@ def _nomenclature_instruction(species: str) -> str:
             "Do NOT use mouse title-case nomenclature (Chga, Vim, Acta2, Krt19).")
 
 
+_EMPTY_HEADER = "Cluster\tcell_type\tkey_evidence\tcontradictions\tconfidence\tresolving_markers\n"
+
+
+def _handle_missing_key(what: str, args) -> None:
+    """A missing API key is an error unless the user explicitly opted into skipping."""
+    if args.allow_skip_without_key:
+        print(f"WARNING: no API key found in {what}. Skipping LLM annotation and writing an "
+              f"EMPTY annotation table (scp.llm.skip_without_key is true).", file=sys.stderr)
+        Path(args.out_tsv).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out_tsv).write_text(_EMPTY_HEADER, encoding="utf-8")
+        sys.exit(0)
+    print(f"ERROR: no API key found in {what}. LLM annotation cannot run. Set the key, or "
+          f"set scp.llm.skip_without_key to true to deliberately skip annotation (the "
+          f"pipeline then writes an empty annotation table).", file=sys.stderr)
+    sys.exit(1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--prompt-md",    required=True)
@@ -776,7 +837,16 @@ def main():
                     help="OpenRouter unified reasoning.effort for OpenAI-compatible reasoning "
                          "models ('' = unset/model default). Bounds how much of max_tokens a "
                          "reasoning model spends on hidden thinking vs. the visible answer.")
-    ap.add_argument("--condition-b", action="store_true",
+    ap.add_argument("--allow-skip-without-key", action="store_true",
+                    help="If no API key is available, write an empty annotation table and "
+                         "exit 0 instead of failing. Off by default: a missing key is an error.")
+    ap.add_argument("--allow-incomplete", action="store_true",
+                    help="Write the annotation table even if some clusters received no call. "
+                         "Off by default: an incomplete table is an error.")
+    ap.add_argument("--no-condition-b", dest="condition_b", action="store_false",
+                    help="Disable the three-round architecture (Round 0 context constraints "
+                         "plus generic amendments) and use the plain two-pass prompt.")
+    ap.add_argument("--condition-b", action="store_true", default=True,
                     help="Enable Condition B prompting: inject 3 generic amendments "
                          "(developmental context, mechanistic threshold, non-self proteins) "
                          "plus a Round 0 blind context reasoning call into the prompt "
@@ -812,26 +882,15 @@ def main():
                 m = _json.load(open(machine_json))
                 api_key = m.get("scp", {}).get("anthropic_key", "").strip()
         if not api_key:
-            print("WARNING: No ANTHROPIC_API_KEY found. Skipping LLM annotation.",
-                  file=sys.stderr)
-            Path(args.out_tsv).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.out_tsv).write_text(
-                "Cluster\tcell_type\tkey_evidence\tcontradictions\tconfidence\tresolving_markers\n",
-                encoding="utf-8")
-            sys.exit(0)
+            _handle_missing_key("ANTHROPIC_API_KEY (or scp.llm.api_key in config/caspa.json)",
+                                args)
     else:
         api_key = os.environ.get("ELM_API_KEY", "").strip()
         if not api_key:
             api_key = os.environ.get("OPENAI_API_KEY", "").strip()
         if not api_key:
-            print("WARNING: No API key found (ELM_API_KEY or OPENAI_API_KEY). "
-                  "Skipping LLM annotation.", file=sys.stderr)
-            # Write empty output so Snakemake is satisfied
-            Path(args.out_tsv).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.out_tsv).write_text(
-                "Cluster\tcell_type\tkey_evidence\tcontradictions\tconfidence\tresolving_markers\n",
-                encoding="utf-8")
-            sys.exit(0)
+            _handle_missing_key("ELM_API_KEY / OPENAI_API_KEY (or scp.llm.api_key in "
+                                "config/caspa.json)", args)
 
     # ---- Build experiment context block ----
     nomenclature = _nomenclature_instruction(args.species)
@@ -1013,6 +1072,9 @@ def main():
 
     rows_p1 = parse_annotation_table(text_p1)
     print(f"Parsed {len(rows_p1)} annotations from pass 1")
+    expected_ids = expected_cluster_ids(prompt_text)
+    check_annotation_completeness(rows_p1, expected_ids,
+                                  allow_incomplete=args.allow_incomplete, stage="pass 1")
 
     requested = parse_requested_markers(text_p1)
     print(f"LLM requested {len(requested)} additional markers: {requested}")
@@ -1134,15 +1196,18 @@ def main():
     print(f"Pass 2 complete ({len(text_p2):,} chars, finish={finish_p2})")
 
     rows_p2 = parse_annotation_table(text_p2)
+    if not rows_p2:
+        print("WARNING: pass 2 returned no parsable table; falling back to the pass 1 "
+              "annotations.", file=sys.stderr)
     final_rows = rows_p2 if rows_p2 else rows_p1
     print(f"Parsed {len(final_rows)} annotations from pass 2")
 
-    # Completeness guard: every cluster should get a call. Fewer usually means the
-    # LLM output was truncated (token cap) or a row failed to parse.
-    if n_clusters and len(final_rows) < n_clusters:
-        print(f"WARNING: only {len(final_rows)} of {n_clusters} clusters were "
-              f"annotated. Output may have been truncated (raise scp.llm.max_tokens) "
-              f"or some rows failed to parse.", file=sys.stderr)
+    # Completeness guard: every cluster must get a non-empty call. Fewer usually means
+    # the LLM output was truncated (token cap) or a row failed to parse. This is an
+    # error unless --allow-incomplete was given, so a failed annotation is never
+    # written silently as a partial or empty table.
+    check_annotation_completeness(final_rows, expected_ids,
+                                  allow_incomplete=args.allow_incomplete, stage="pass 2")
 
     # =========================================================================
     # WRITE OUTPUTS

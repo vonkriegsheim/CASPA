@@ -16,7 +16,9 @@ Key methods
 - Builds X_int (log intensities, missing=NaN) and X_det (0/1)
 - Median normalisation per run (on log intensities, detected-only)
 - PCA on intensity (embedding-only impute by protein median)
-- PCA on detection (SVD on centred detection)
+- Detection block: Gaussian PCA on centred 0/1 calls (default), or a Bernoulli
+  GLM-PCA (logistic PCA) fitted to the binary calls with a per-protein intercept
+  and, optionally, a per-cell intercept (--det_embedding)
 - Joint embedding = [PC_int, PC_det] with block-wise standardisation
 - Optional Harmony batch correction in embedding space (Library)
 - Neighbors/UMAP/Leiden
@@ -147,6 +149,73 @@ def pca_svd(samples_x_features: np.ndarray, n_components: int) -> tuple[np.ndarr
     return scores, S[:k]
 
 
+def bernoulli_glmpca(X01: np.ndarray, n_components: int, cell_intercept: bool = False,
+                     max_iter: int = 300, tol: float = 1e-5,
+                     verbose: bool = True) -> tuple[np.ndarray, dict]:
+    """
+    Bernoulli GLM-PCA (logistic PCA) on a binary cells x proteins matrix.
+
+    Model: logit P(x_ij = 1) = a_i + b_j + (U V^T)_ij, with a per-protein intercept
+    b_j (always), an optional per-cell intercept a_i (a Rasch-type depth term, the
+    logistic analogue of a size factor) and a rank-k factorisation U V^T.
+
+    Fitted by majorisation-minimisation (de Leeuw 2006; Landgraf & Lee 2020): the
+    Bernoulli deviance is majorised by a quadratic with curvature 1/4, so each
+    iteration sets Z = eta + 4 (X - sigmoid(eta)), re-estimates the intercepts as
+    the row/column means of Z and the factors as the rank-k SVD of the residual.
+    Deviance decreases monotonically; the fit is deterministic (no random start).
+
+    Returns (cell_scores [cells x k], fit_info).
+    """
+    X = np.asarray(X01, dtype=float)
+    n, p = X.shape
+    k = max(1, min(n_components, n - 1, p - 1))
+
+    def _sigmoid(e):
+        return 1.0 / (1.0 + np.exp(-np.clip(e, -30, 30)))
+
+    def _deviance(e):
+        mu = _sigmoid(e)
+        eps = 1e-12
+        return -2.0 * np.sum(X * np.log(mu + eps) + (1 - X) * np.log(1 - mu + eps))
+
+    # Initialise intercepts from marginal detection rates and factors from zero.
+    col_rate = np.clip(X.mean(axis=0), 1e-3, 1 - 1e-3)
+    b = np.log(col_rate / (1 - col_rate))
+    a = np.zeros(n)
+    if cell_intercept:
+        row_rate = np.clip(X.mean(axis=1), 1e-3, 1 - 1e-3)
+        a = np.log(row_rate / (1 - row_rate)) - b.mean()
+    eta = a[:, None] + b[None, :]
+    dev_prev = _deviance(eta)
+    scores = np.zeros((n, k))
+    n_iter = 0
+    for n_iter in range(1, max_iter + 1):
+        Z = eta + 4.0 * (X - _sigmoid(eta))
+        b = Z.mean(axis=0)
+        R = Z - b[None, :]
+        if cell_intercept:
+            a = R.mean(axis=1)
+            R = R - a[:, None]
+        U, S, Vt = np.linalg.svd(R, full_matrices=False)
+        scores = U[:, :k] * S[:k]
+        eta = a[:, None] + b[None, :] + scores @ Vt[:k, :]
+        dev = _deviance(eta)
+        rel = (dev_prev - dev) / max(abs(dev_prev), 1.0)
+        dev_prev = dev
+        if rel < tol:
+            break
+    null_dev = _deviance(np.log(col_rate / (1 - col_rate))[None, :].repeat(n, axis=0))
+    info = {"n_iter": int(n_iter), "deviance": float(dev_prev),
+            "null_deviance": float(null_dev),
+            "deviance_explained": float(1.0 - dev_prev / null_dev) if null_dev > 0 else None,
+            "cell_intercept": bool(cell_intercept), "rank": int(k)}
+    if verbose:
+        print(f"GLM-PCA (Bernoulli{', cell intercept' if cell_intercept else ''}): rank {k}, "
+              f"{n_iter} iterations, deviance explained {info['deviance_explained']:.3f}")
+    return scores, info
+
+
 def standardise_block(Z: np.ndarray) -> np.ndarray:
     """
     Standardise each column to unit variance (and zero mean) to balance blocks.
@@ -174,6 +243,17 @@ def main():
 
     ap.add_argument("--n_pcs_int", type=int, default=20)
     ap.add_argument("--n_pcs_det", type=int, default=10)
+    ap.add_argument(
+        "--det_embedding",
+        choices=["pca", "glmpca", "glmpca_cellint"],
+        default="pca",
+        help="How the 0/1 detection block is embedded: 'pca' = Gaussian PCA on centred "
+             "calls (default); 'glmpca' = Bernoulli GLM-PCA (logistic PCA) with a "
+             "per-protein intercept; 'glmpca_cellint' = GLM-PCA with per-protein and "
+             "per-cell intercepts (depth term).",
+    )
+    ap.add_argument("--glmpca_max_iter", type=int, default=300)
+    ap.add_argument("--glmpca_tol", type=float, default=1e-5)
     ap.add_argument("--n_neighbors", type=int, default=15)
     ap.add_argument("--leiden_resolution", type=float, default=0.8)
     ap.add_argument("--min_cluster_size", type=int, default=5)
@@ -286,8 +366,17 @@ def main():
     if args.n_pcs_int > 0:
         pc_int, _ = pca_svd(X_int.T, n_components=min(args.n_pcs_int, n_cells - 1))
         blocks.append(standardise_block(pc_int))
+    glmpca_info = None
     if args.n_pcs_det > 0:
-        pc_det, _ = pca_svd(X_det.T, n_components=min(args.n_pcs_det, n_cells - 1))
+        if args.det_embedding == "pca":
+            pc_det, _ = pca_svd(X_det.T, n_components=min(args.n_pcs_det, n_cells - 1))
+        else:
+            # Bernoulli GLM-PCA on the raw 0/1 calls (cells x proteins); the Gaussian
+            # centring above is not used for this error family.
+            pc_det, glmpca_info = bernoulli_glmpca(
+                present.T.astype(float), n_components=min(args.n_pcs_det, n_cells - 1),
+                cell_intercept=(args.det_embedding == "glmpca_cellint"),
+                max_iter=args.glmpca_max_iter, tol=args.glmpca_tol)
         blocks.append(standardise_block(pc_det))
     if not blocks:
         raise SystemExit("Need n_pcs_int>0 and/or n_pcs_det>0 (both are 0).")
@@ -520,7 +609,9 @@ def main():
             "seed": args.seed,
             "batch_correct": args.batch_correct,
             "harmony_theta": args.harmony_theta,
+            "detection_embedding": args.det_embedding,
         },
+        "glmpca_fit": glmpca_info,
         "library_source_column": lib_src,
         "n_libraries": int(n_libs),
         "batch_applied": bool(batch_applied),
@@ -581,7 +672,8 @@ def main():
     if pc_det is not None:
         fig, ax = plt.subplots(figsize=figsize_sq)
         ax.scatter(pc_det[:, 0], pc_det[:, 1], s=s_use, alpha=0.80, linewidths=0)
-        ax.set_title("Detection PCA block (PC1/PC2)")
+        ax.set_title("Detection block (PC1/PC2)" if args.det_embedding == "pca"
+                     else "Detection block, Bernoulli GLM-PCA (dim 1/2)")
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
         ax.set_aspect("equal", adjustable="datalim")

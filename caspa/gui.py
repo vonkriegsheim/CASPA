@@ -327,8 +327,11 @@ with l2:
                                  "via Claude Code.")
     st.text_input("Base URL (OpenAI-compatible)", key="llm_base_url",
                   help="Auto-filled for Gemini / DeepSeek; leave blank for OpenAI / Anthropic.")
-condition_b = st.checkbox("Use 3-round (Round-0 context) annotation",
-                          value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", False)))
+condition_b = st.checkbox("Use 3-round (Round-0 context) annotation (default, as published)",
+                          value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", True)),
+                          help="Round 0 derives dataset-specific constraints from the experiment "
+                               "description before any cluster data are shown; Rounds 1-2 annotate "
+                               "and refine. Untick only to reproduce the plain two-pass prompt.")
 with st.expander("Advanced LLM options"):
     max_tokens = num_field(
         "Max output tokens",

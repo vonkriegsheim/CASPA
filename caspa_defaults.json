@@ -12,7 +12,8 @@
       "n_neighbors": 15,
       "leiden_resolution": 0.8,
       "harmony_batch_key": "Batch",
-      "seed": 0
+      "seed": 0,
+      "detection_embedding": "pca"
     },
     "markers": {
       "wilcoxon_pval": 0.05,
@@ -26,10 +27,12 @@
     "exclude_run_regex": "^(library|lib|5cell|10cell|100cell)",
     "custom_proteins": "",
     "llm": {
-      "model": "gpt-4o",
+      "model": "gpt-5.2",
       "base_url": "",
       "api_key": "",
-      "condition_b": false,
+      "condition_b": true,
+      "skip_without_key": false,
+      "allow_incomplete": false,
       "provider": "openai",
       "thinking_budget": 0,
       "max_tokens": 16000,

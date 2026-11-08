@@ -1,0 +1,18 @@
+{
+  "title": "CASPA: Context-Aware Single-Cell Proteomics Analysis pipeline",
+  "description": "Snakemake pipeline for label-free single-cell proteomics: adaptive quality control, entropy-guided iterative Harmony batch correction, multi-modality marker discovery and context-aware cell type annotation by large language models with a three-round prompt architecture and full audit trail. Software accompanying Salomó Coll, Makar et al., Nature Communications (2026).",
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "creators": [
+    {"name": "Salomó Coll, Carla", "affiliation": "University of Edinburgh"},
+    {"name": "Makar, Agata N", "affiliation": "University of Edinburgh"},
+    {"name": "Brenes, Alejandro J", "affiliation": "University of Edinburgh"},
+    {"name": "Inns, Joseph", "affiliation": "Newcastle University"},
+    {"name": "Trost, Matthias", "affiliation": "Newcastle University"},
+    {"name": "Rajan, Neil", "affiliation": "Newcastle University"},
+    {"name": "Wilkinson, Simon", "affiliation": "University of Edinburgh"},
+    {"name": "von Kriegsheim, Alex", "affiliation": "University of Edinburgh"}
+  ],
+  "keywords": ["single-cell proteomics", "mass spectrometry", "cell type annotation", "large language models", "Snakemake", "Harmony", "scplainer"]
+}
