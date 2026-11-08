@@ -4,7 +4,7 @@
 ; Compile with: ISCC.exe caspa-setup.iss  (CI does this on a Windows runner).
 
 #define MyAppName "CASPA"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.0"
 #define RepoRoot ".."
 
 [Setup]

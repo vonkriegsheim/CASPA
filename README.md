@@ -24,7 +24,7 @@ conda activate caspa
 ```
 
 **Windows (easiest)** — download
-**[`caspa-setup.exe`](https://github.com/vonkriegsheim/CASPA/releases/download/v0.1.0/caspa-setup.exe)**
+**[`caspa-setup.exe`](https://github.com/vonkriegsheim/CASPA/releases/latest/download/caspa-setup.exe)**
 ([all releases](https://github.com/vonkriegsheim/CASPA/releases)) and double-click.
 It's a no-admin installer that sets up a private, version-pinned Python + R inside
 its own folder (installs to `%LOCALAPPDATA%\CASPA`; ~20–40 min as it downloads
