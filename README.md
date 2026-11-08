@@ -1,5 +1,8 @@
 # CASPA — Context-Aware Single Cell Proteomic Analysis
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24058602.svg)](https://doi.org/10.5281/zenodo.24058602)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Standalone Snakemake pipeline for single-cell proteomics analysis. Takes a
 pre-exported protein-group matrix (DIA-NN, FragPipe) **or** a raw Spectronaut
 long-format TSV. No bulk pipeline dependency.
@@ -538,9 +541,10 @@ If you use CASPA, please cite the paper and the archived software version:
 - Salomó Coll C, Makar AN, Brenes AJ, Inns J, Trost M, Rajan N, Wilkinson S,
   von Kriegsheim A. A Context-Aware Single-Cell Proteomics Analysis pipeline.
   *Nature Communications* (2026), in press.
-- CASPA software, version used in the paper, archived in Zenodo:
-  doi:10.5281/zenodo.XXXXXXX (replace with the concept DOI once the first
-  release is archived; `CITATION.cff` carries the same metadata).
+- CASPA software v0.2.0, the version used in the paper, archived in Zenodo:
+  [doi:10.5281/zenodo.24058604](https://doi.org/10.5281/zenodo.24058604). The concept DOI
+  [doi:10.5281/zenodo.24058602](https://doi.org/10.5281/zenodo.24058602) always resolves to the
+  latest archived release; `CITATION.cff` carries the same metadata.
 
 CASPA is released under the [MIT licence](LICENSE). It builds on the following
 tools, each used under its own open-source licence (notices are retained in
