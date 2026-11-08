@@ -26,7 +26,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 [Files]
 ; CASPA source tree -> {app}
 Source: "{#RepoRoot}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; \
-  Excludes: "\.git\*,\.github\*,	ests\*,\installer\Output\*,\installer\caspa-setup.iss,*.pyc,*.pyo,__pycache__\*,\.snakemake\*,_*.log,*.exe"
+  Excludes: "\.git\*,\.github\*,\tests\*,\installer\Output\*,\installer\caspa-setup.iss,*.pyc,*.pyo,__pycache__\*,\.snakemake\*,_*.log,*.exe"
 ; launchers at the install root (so %~dp0 resolves to {app})
 Source: "CASPA-GUI.cmd";     DestDir: "{app}"; Flags: ignoreversion
 Source: "CASPA-Console.cmd"; DestDir: "{app}"; Flags: ignoreversion
