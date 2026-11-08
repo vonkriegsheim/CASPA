@@ -150,7 +150,7 @@ def pca_svd(samples_x_features: np.ndarray, n_components: int) -> tuple[np.ndarr
 
 
 def bernoulli_glmpca(X01: np.ndarray, n_components: int, cell_intercept: bool = False,
-                     max_iter: int = 300, tol: float = 1e-5,
+                     max_iter: int = 500, tol: float = 1e-4,
                      verbose: bool = True) -> tuple[np.ndarray, dict]:
     """
     Bernoulli GLM-PCA (logistic PCA) on a binary cells x proteins matrix.
@@ -165,7 +165,12 @@ def bernoulli_glmpca(X01: np.ndarray, n_components: int, cell_intercept: bool = 
     the row/column means of Z and the factors as the rank-k SVD of the residual.
     Deviance decreases monotonically; the fit is deterministic (no random start).
 
-    Returns (cell_scores [cells x k], fit_info).
+    The rank-k SVD is obtained exactly from the eigendecomposition of the smaller
+    Gram matrix (R R^T for cells < proteins), which is several-fold cheaper than a
+    full SVD of the cells x proteins residual and equally deterministic.
+
+    Returns (cell_scores [cells x k], fit_info). fit_info["converged"] is False when
+    max_iter was reached before the relative deviance change fell below tol.
     """
     X = np.asarray(X01, dtype=float)
     n, p = X.shape
@@ -174,10 +179,24 @@ def bernoulli_glmpca(X01: np.ndarray, n_components: int, cell_intercept: bool = 
     def _sigmoid(e):
         return 1.0 / (1.0 + np.exp(-np.clip(e, -30, 30)))
 
-    def _deviance(e):
-        mu = _sigmoid(e)
+    def _deviance(mu):
         eps = 1e-12
         return -2.0 * np.sum(X * np.log(mu + eps) + (1 - X) * np.log(1 - mu + eps))
+
+    def _rank_k(R):
+        """Exact rank-k truncation of R (= U_k S_k V_k^T) via the smaller Gram matrix.
+        Returns (scores = U_k S_k [n x k], low-rank reconstruction [n x p])."""
+        if n <= p:
+            w, U = np.linalg.eigh(R @ R.T)
+            U = U[:, ::-1][:, :k]
+            w = np.clip(w[::-1][:k], 0.0, None)
+            U = U * np.sign(U[np.abs(U).argmax(axis=0), np.arange(k)])  # fixed sign
+            return U * np.sqrt(w), U @ (U.T @ R)
+        w, V = np.linalg.eigh(R.T @ R)
+        V = V[:, ::-1][:, :k]
+        V = V * np.sign(V[np.abs(V).argmax(axis=0), np.arange(k)])
+        scores = R @ V
+        return scores, scores @ V.T
 
     # Initialise intercepts from marginal detection rates and factors from zero.
     col_rate = np.clip(X.mean(axis=0), 1e-3, 1 - 1e-3)
@@ -187,32 +206,40 @@ def bernoulli_glmpca(X01: np.ndarray, n_components: int, cell_intercept: bool = 
         row_rate = np.clip(X.mean(axis=1), 1e-3, 1 - 1e-3)
         a = np.log(row_rate / (1 - row_rate)) - b.mean()
     eta = a[:, None] + b[None, :]
-    dev_prev = _deviance(eta)
+    mu = _sigmoid(eta)
+    dev_prev = _deviance(mu)
     scores = np.zeros((n, k))
     n_iter = 0
+    rel = float("nan")
+    converged = False
     for n_iter in range(1, max_iter + 1):
-        Z = eta + 4.0 * (X - _sigmoid(eta))
+        Z = eta + 4.0 * (X - mu)
         b = Z.mean(axis=0)
         R = Z - b[None, :]
         if cell_intercept:
             a = R.mean(axis=1)
             R = R - a[:, None]
-        U, S, Vt = np.linalg.svd(R, full_matrices=False)
-        scores = U[:, :k] * S[:k]
-        eta = a[:, None] + b[None, :] + scores @ Vt[:k, :]
-        dev = _deviance(eta)
+        scores, R_k = _rank_k(R)
+        eta = a[:, None] + b[None, :] + R_k
+        mu = _sigmoid(eta)
+        dev = _deviance(mu)
         rel = (dev_prev - dev) / max(abs(dev_prev), 1.0)
         dev_prev = dev
         if rel < tol:
+            converged = True
             break
-    null_dev = _deviance(np.log(col_rate / (1 - col_rate))[None, :].repeat(n, axis=0))
-    info = {"n_iter": int(n_iter), "deviance": float(dev_prev),
-            "null_deviance": float(null_dev),
+    null_dev = _deviance(np.broadcast_to(col_rate, X.shape))
+    info = {"n_iter": int(n_iter), "converged": bool(converged),
+            "deviance": float(dev_prev), "null_deviance": float(null_dev),
             "deviance_explained": float(1.0 - dev_prev / null_dev) if null_dev > 0 else None,
             "cell_intercept": bool(cell_intercept), "rank": int(k)}
     if verbose:
         print(f"GLM-PCA (Bernoulli{', cell intercept' if cell_intercept else ''}): rank {k}, "
               f"{n_iter} iterations, deviance explained {info['deviance_explained']:.3f}")
+        if not converged:
+            print(f"  note: stopped at max_iter={max_iter} before reaching tol={tol:g} "
+                  f"(last relative deviance change {rel:.2e}); raise --glmpca_max_iter "
+                  f"or --glmpca_tol to change the stopping point.")
     return scores, info
 
 
@@ -252,8 +279,13 @@ def main():
              "per-protein intercept; 'glmpca_cellint' = GLM-PCA with per-protein and "
              "per-cell intercepts (depth term).",
     )
-    ap.add_argument("--glmpca_max_iter", type=int, default=300)
-    ap.add_argument("--glmpca_tol", type=float, default=1e-5)
+    ap.add_argument("--glmpca_max_iter", type=int, default=500,
+                    help="GLM-PCA: maximum MM iterations. The fit is deterministic given "
+                         "--glmpca_max_iter and --glmpca_tol; the report records whether the "
+                         "tolerance was reached.")
+    ap.add_argument("--glmpca_tol", type=float, default=1e-4,
+                    help="GLM-PCA: stop when the relative deviance decrease per iteration "
+                         "falls below this value.")
     ap.add_argument("--n_neighbors", type=int, default=15)
     ap.add_argument("--leiden_resolution", type=float, default=0.8)
     ap.add_argument("--min_cluster_size", type=int, default=5)
@@ -353,10 +385,11 @@ def main():
     sd[sd == 0] = 1.0
     X_int = X_int / sd
 
-    # Detection matrix: proteins x cells binary
+    # Detection matrix: proteins x cells binary. Centring is only used by the
+    # Gaussian PCA path; GLM-PCA works on the raw 0/1 calls.
     X_det = present.astype(float)
-    # centre proteins
-    X_det = X_det - X_det.mean(axis=1, keepdims=True)
+    if args.det_embedding == "pca":
+        X_det = X_det - X_det.mean(axis=1, keepdims=True)
 
     # PCA in sample space (cells x proteins). n_pcs_*=0 drops that modality — this
     # enables the embedding-ablation benchmark (EXP2/R1-S2): intensity-only
@@ -672,10 +705,11 @@ def main():
     if pc_det is not None:
         fig, ax = plt.subplots(figsize=figsize_sq)
         ax.scatter(pc_det[:, 0], pc_det[:, 1], s=s_use, alpha=0.80, linewidths=0)
-        ax.set_title("Detection block (PC1/PC2)" if args.det_embedding == "pca"
+        is_pca = args.det_embedding == "pca"
+        ax.set_title("Detection block (PC1/PC2)" if is_pca
                      else "Detection block, Bernoulli GLM-PCA (dim 1/2)")
-        ax.set_xlabel("PC1")
-        ax.set_ylabel("PC2")
+        ax.set_xlabel("PC1" if is_pca else "GLM-PCA 1")
+        ax.set_ylabel("PC2" if is_pca else "GLM-PCA 2")
         ax.set_aspect("equal", adjustable="datalim")
         plt.savefig(qc_dir / f"pca_detection.{plot_ext}", bbox_inches="tight")
         plt.close(fig)

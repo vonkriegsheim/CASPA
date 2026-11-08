@@ -441,10 +441,16 @@ Override any key in `config/caspa.json`.
 The three-round architecture described in the paper is the default
 (`llm.condition_b: true`): Round 0 asks the model to derive dataset-specific
 constraints from the experiment description alone, Round 1 annotates the
-clusters with the marker evidence, and Round 2 queries supplementary markers
-for low- and medium-confidence clusters. Every rendered prompt, the Round 0
+clusters with the marker evidence, and Round 2 supplies the detection rates of
+the supplementary markers the model requested in Round 1 and asks for a revised
+table. Every rendered prompt, the Round 0
 constraints and the raw model output are written to `scp/llm/` together with a
 JSON sidecar recording model, prompt hash and settings.
+
+Workdirs scaffolded before this version carry an explicit
+`"condition_b": false` in `config/caspa.json` (the old template default), which
+overrides the bundled default: set it to `true` or delete the key to get the
+three-round architecture in an existing workdir.
 
 The annotation step **fails loudly** rather than passing silently:
 
@@ -463,8 +469,12 @@ error family the data call for is Bernoulli; `detection_embedding: "glmpca"`
 fits a logistic (Bernoulli GLM-)PCA with a per-protein intercept, and
 `"glmpca_cellint"` adds a per-cell intercept (a Rasch-type depth term, the
 logistic analogue of a size factor). The fit is deterministic
-(majorisation-minimisation; de Leeuw 2006, Landgraf & Lee 2020) and its deviance
-explained is written to `scp/clustering/scp_clustering_report.json`. In the
+(majorisation-minimisation; de Leeuw 2006, Landgraf & Lee 2020) given the
+iteration cap and tolerance (`--glmpca_max_iter`, `--glmpca_tol`); the report
+`scp/clustering/scp_clustering_report.json` records the deviance explained and
+whether the tolerance was reached. Deviance explained is measured against the
+per-protein-intercept null in both modes, so for `glmpca_cellint` it includes
+the contribution of the cell intercept. In the
 embedding ablation reported with the paper, the Bernoulli block did not improve
 coarse lineage recovery against FACS ground truth, so Gaussian PCA remains the
 default; the option is there so the choice can be tested on your own data.
@@ -503,6 +513,19 @@ for the step-by-step procedure and how to read the result.
 Cell type annotations are cross-validated against
 `pipeline/assets/panglaodb_markers.tsv.gz` (8,286 markers, 178 cell types,
 human + mouse) before the LLM call, providing an independent evidence layer.
+
+---
+
+## Tests
+
+ holds unit and end-to-end tests (plain , also pytest-compatible):
+the Bernoulli GLM-PCA fit, the embedding script in all three detection-embedding
+modes (skipped unless / point at a
+ and  from a pipeline run), and the LLM
+annotation step driven through a mock OpenAI-compatible server covering every
+failure path (missing key, empty response, truncated or incomplete tables).
+
+
 
 ---
 
