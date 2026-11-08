@@ -113,6 +113,15 @@ enough to complete this tutorial.
 }
 ```
 
+**What the defaults give you.** The three-round annotation architecture from the
+paper is on by default (`scp.llm.condition_b: true`): Round 0 derives
+dataset-specific constraints from your description before any cluster data are
+shown, then two annotation passes follow. You do not need to set anything to get
+it. If the key is missing, or the model returns an empty or incomplete table,
+the annotation step **fails with an explicit error** rather than writing a blank
+file, so check the Snakemake log if `scp/llm/cluster_cell_type_annotations.tsv`
+does not appear.
+
 ## 4. Run
 
 ```bash
@@ -162,7 +171,9 @@ differ run to run, since these are genuine LLM calls, not fixed lookup values):
 | C2 | Basal/outer-root-sheath keratinocyte | Medium-high |
 | ... | ... | ... |
 
-If instead the file is empty, has fewer rows than clusters, or every row says
+If the file is missing, the annotation step failed and the Snakemake log ends
+with an `ERROR: ...` line naming the cause (no API key, an empty model response,
+or clusters without a call). If the file is present but every row says
 something generic like "Contaminant" or "Unknown" with Low confidence across
 the board, something went wrong upstream — see the appendix below before
 re-running.
@@ -172,6 +183,63 @@ your own `pg_matrix.tsv` (or `--spectronaut-tsv` for a Spectronaut export) and a
 description tailored to your experiment.
 
 ---
+
+## 6. Modality sensitivity check: which calls can you trust?
+
+CASPA shows the annotator up to four evidence layers per cluster: detection
+rate, intensity fold-change, scplainer contrasts and AUCell pathway activity.
+In our benchmarks no single layer, and no combination, was reliable for every
+cluster: in the skin tumour dataset the full evidence set labelled a cluster of
+phagocytic macrophages as keratinocytes because ingested keratins dominated the
+intensity layer, and only the detection layer recovered the right call. Without
+FACS ground truth you cannot know in advance which clusters are affected, so we
+recommend treating a modality sensitivity analysis as part of routine
+annotation, not as an optional extra. It costs one extra model call per
+configuration and takes a few minutes.
+
+**Step 1: keep the default run.** Finish the normal run first; the table in
+`scp/llm/cluster_cell_type_annotations.tsv` is your reference.
+
+**Step 2: rerun the annotation with modalities removed.** Copy the workdir (or
+just the `config/` folder into a new workdir pointing at the same input), and
+in each copy restrict `scp.llm.marker_modalities`. Two configurations are
+usually enough; the full leave-one-out is four:
+
+```json
+"scp": { "llm": { "marker_modalities": ["detection"] } }
+```
+
+```json
+"scp": { "llm": { "marker_modalities": ["detection", "scplainer", "aucell"] } }
+```
+
+Then rerun only the annotation branch:
+
+```bash
+python caspa/run.py --workdir /path/to/copy --cores 4 \
+  --target scp/llm/cluster_cell_type_annotations.tsv
+```
+
+Clustering is unchanged, so cluster IDs are directly comparable across copies.
+
+**Step 3: compare the calls cluster by cluster.**
+
+| Pattern | Reading | What to do |
+|---|---|---|
+| Same lineage in every configuration | Stable call | Accept at the confidence tier reported |
+| Lineage changes when **intensity** (or scplainer) is removed | The call is driven by a few very large fold-changes; think ingested, ambient or carried-over material | Flag as unreliable; check the dotplot for proteins detected everywhere but enriched here; prefer the detection-only call if it matches the sort gate or orthogonal data |
+| Lineage changes when **detection** is removed | The population is defined by a small set of presence/absence markers, typically a low-abundance cell type | Flag; check the resolving markers the annotator proposed |
+| Confidence drops but lineage holds | Evidence is thinner than the default run suggests | Keep the call, report the lower tier |
+
+A changed label is a reason for expert review, orthogonal validation (staining,
+FACS metadata) or a targeted look at the `resolving_markers` column, not a
+reason to pick whichever configuration gives the preferred answer. Do not leave
+a restricted `marker_modalities` list configured for production runs: the full
+evidence set remains the default because it was the best average performer, and
+the ablation exists to tell you which clusters that average hides.
+
+**Step 4: record it.** Each run writes its prompt, raw output and a JSON
+sidecar to `scp/llm/`; keep the copies so the comparison is auditable.
 
 ## Appendix: LLM-annotation failure modes and how to read them
 
@@ -183,15 +251,20 @@ while validating this pipeline against dozens of models and provider
 configurations; if your own run produces incomplete or empty annotations, check
 this list before assuming the pipeline itself is broken.
 
-**Truncated or empty output on large/complex datasets.** If `scp/llm/
-cluster_cell_type_annotations.tsv` has noticeably fewer rows than clusters, or
-the file is empty after a run that otherwise completed without an error, this
-is very likely an output-token budget problem, not a crash. Symptom: the run
-finishes with exit code 0 (Snakemake reports success) but the annotation table
-is silently incomplete. This happened repeatedly with datasets that have many
-clusters (20+) and/or with a model's reasoning effort turned up — a model can
-spend most of its allotted output tokens on internal reasoning before it ever
-writes the answer table, leaving too little budget for the visible output.
+**Truncated or empty output on large/complex datasets.** If the annotation
+step stops with `ERROR: incomplete LLM annotation after pass 2: N of M clusters
+have no row ...` or `ERROR: <model> returned an empty response with
+finish=length ...`, this is very likely an output-token budget problem, not a
+crash. The step exits with code 2 and writes no annotation table (the raw pass
+1 and pass 2 outputs stay in `scp/llm/` for inspection); it never writes a
+silently incomplete table. This happened repeatedly with datasets that have
+many clusters (20+) and/or with a model's reasoning effort turned up — a model
+can spend most of its allotted output tokens on internal reasoning before it
+ever writes the answer table, leaving too little budget for the visible output.
+If pass 2 is truncated but pass 1 was complete, the clusters missing from pass
+2 keep their pass 1 call and the run continues with a warning; the metadata
+sidecar lists them under `clusters_filled_from_pass1`. Setting
+`scp.llm.allow_incomplete: true` writes a partial table instead of failing.
 **Fix:** raise `scp.llm.max_tokens` in `config/caspa.json` (try doubling it) and
 re-run. CASPA already auto-clamps `max_tokens` down to a model's own hard cap
 when needed and warns on truncation (check the pipeline log for a `WARNING:

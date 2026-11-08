@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: "If you use CASPA, please cite the paper and the archived software version."
+title: "CASPA: Context-Aware Single-Cell Proteomics Analysis pipeline"
+type: software
+version: 0.2.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/vonkriegsheim/CASPA"
+# doi: 10.5281/zenodo.XXXXXXX   # concept DOI, filled in after the first Zenodo archive
+authors:
+  - family-names: "Salomó Coll"
+    given-names: "Carla"
+    affiliation: "CRUK Scotland Centre, Institute of Genetics and Cancer, University of Edinburgh"
+  - family-names: "Makar"
+    given-names: "Agata N"
+    affiliation: "CRUK Scotland Centre, Institute of Genetics and Cancer, University of Edinburgh"
+  - family-names: "Brenes"
+    given-names: "Alejandro J"
+    affiliation: "Centre for Inflammation Research, Institute for Regeneration and Repair, University of Edinburgh"
+  - family-names: "Inns"
+    given-names: "Joseph"
+    affiliation: "Translational and Clinical Research Institute, Newcastle University"
+  - family-names: "Trost"
+    given-names: "Matthias"
+    affiliation: "Translational and Clinical Research Institute, Newcastle University"
+  - family-names: "Rajan"
+    given-names: "Neil"
+    affiliation: "Translational and Clinical Research Institute, Newcastle University"
+  - family-names: "Wilkinson"
+    given-names: "Simon"
+    affiliation: "CRUK Scotland Centre, Institute of Genetics and Cancer, University of Edinburgh"
+  - family-names: "von Kriegsheim"
+    given-names: "Alex"
+    affiliation: "CRUK Scotland Centre, Institute of Genetics and Cancer, University of Edinburgh"
+    email: "Alex.vonKriegsheim@ed.ac.uk"
+preferred-citation:
+  type: article
+  title: "A Context-Aware Single-Cell Proteomics Analysis pipeline"
+  journal: "Nature Communications"
+  year: 2026
+  authors:
+    - family-names: "Salomó Coll"
+      given-names: "Carla"
+    - family-names: "Makar"
+      given-names: "Agata N"
+    - family-names: "Brenes"
+      given-names: "Alejandro J"
+    - family-names: "Inns"
+      given-names: "Joseph"
+    - family-names: "Trost"
+      given-names: "Matthias"
+    - family-names: "Rajan"
+      given-names: "Neil"
+    - family-names: "Wilkinson"
+      given-names: "Simon"
+    - family-names: "von Kriegsheim"
+      given-names: "Alex"

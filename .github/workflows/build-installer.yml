@@ -43,6 +43,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: installer/Output/caspa-setup.exe
-          prerelease: true
+          prerelease: false
           generate_release_notes: true
           name: "CASPA ${{ github.ref_name }}"

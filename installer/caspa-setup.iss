@@ -4,7 +4,7 @@
 ; Compile with: ISCC.exe caspa-setup.iss  (CI does this on a Windows runner).
 
 #define MyAppName "CASPA"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.0"
 #define RepoRoot ".."
 
 [Setup]
@@ -26,7 +26,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 [Files]
 ; CASPA source tree -> {app}
 Source: "{#RepoRoot}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; \
-  Excludes: "\.git\*,\.github\*,\installer\Output\*,\installer\caspa-setup.iss,*.pyc,*.pyo,__pycache__\*,\.snakemake\*,_*.log,*.exe"
+  Excludes: "\.git\*,\.github\*,\tests\*,\installer\Output\*,\installer\caspa-setup.iss,*.pyc,*.pyo,__pycache__\*,\.snakemake\*,_*.log,*.exe"
 ; launchers at the install root (so %~dp0 resolves to {app})
 Source: "CASPA-GUI.cmd";     DestDir: "{app}"; Flags: ignoreversion
 Source: "CASPA-Console.cmd"; DestDir: "{app}"; Flags: ignoreversion

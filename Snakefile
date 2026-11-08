@@ -175,6 +175,7 @@ rule scp_joint_embedding:
         h_theta     = _c("scp", "joint_embedding", "harmony_theta",          default=2.0),
         h_theta_max = _c("scp", "joint_embedding", "harmony_theta_max",      default=5.0),
         h_entropy   = _c("scp", "joint_embedding", "harmony_entropy_target", default=0.6),
+        det_emb     = _c("scp", "joint_embedding", "detection_embedding",    default="pca"),
     shell:
         "python {PY}/scp_joint_embedding_leiden.py"
         " --pg-matrix         {input.pg_matrix}"
@@ -188,6 +189,7 @@ rule scp_joint_embedding:
         " --harmony_theta            {params.h_theta}"
         " --harmony_theta_max        {params.h_theta_max}"
         " --harmony_entropy_target   {params.h_entropy}"
+        " --det_embedding            {params.det_emb}"
 
 rule scp_detection_markers:
     input:
@@ -391,7 +393,9 @@ rule scp_llm_annotation:
         model       = _c("scp", "llm", "model", default="gpt-5.2"),
         base_url    = _c("scp", "llm", "base_url", default=""),
         api_key     = _c("scp", "llm", "api_key", default=""),
-        condition_b      = _c("scp", "llm", "condition_b",     default=False),
+        condition_b      = _c("scp", "llm", "condition_b",     default=True),
+        skip_no_key      = _c("scp", "llm", "skip_without_key", default=False),
+        allow_incomplete = _c("scp", "llm", "allow_incomplete", default=False),
         provider         = _c("scp", "llm", "provider",         default="openai"),
         thinking_budget  = _c("scp", "llm", "thinking_budget",  default=0),
         max_tokens       = _c("scp", "llm", "max_tokens",        default=16000),
@@ -411,7 +415,13 @@ rule scp_llm_annotation:
         os.makedirs("scp/llm", exist_ok=True)
         with open(ctx_file, "w", encoding="utf-8") as _fh:
             _fh.write(params.context or "")
-        cond_b_flag    = " --condition-b" if params.condition_b else ""
+        # Three-round architecture (Round 0 context constraints) is the default;
+        # scp.llm.condition_b = false selects the plain two-pass prompt.
+        cond_b_flag    = " --condition-b" if params.condition_b else " --no-condition-b"
+        # A missing API key or an incomplete annotation table is an error unless
+        # the user opts out explicitly in config/caspa.json.
+        skip_flag      = " --allow-skip-without-key" if params.skip_no_key else ""
+        incomplete_flag = " --allow-incomplete" if params.allow_incomplete else ""
         thinking_flag  = f" --thinking-budget {params.thinking_budget}" if params.thinking_budget else ""
         shell(
             f"python {PY}/annotate_clusters_llm.py"
@@ -427,6 +437,8 @@ rule scp_llm_annotation:
             f" --max-tokens   {{params.max_tokens}}"
             f" --out-dir      scp/llm"
             f"{cond_b_flag}"
+            f"{skip_flag}"
+            f"{incomplete_flag}"
             f"{thinking_flag}"
         )
 

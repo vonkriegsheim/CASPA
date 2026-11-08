@@ -323,12 +323,20 @@ with l1:
 with l2:
     api_key = st.text_input("API key", type="password",
                             help="Stored only in this workdir's config/caspa.json (gitignored). "
-                                 "Use the key for the selected service. Leave blank if submitting "
-                                 "via Claude Code.")
+                                 "Use the key for the selected service. A blank key makes the "
+                                 "annotation step fail unless you tick the skip box below.")
     st.text_input("Base URL (OpenAI-compatible)", key="llm_base_url",
                   help="Auto-filled for Gemini / DeepSeek; leave blank for OpenAI / Anthropic.")
-condition_b = st.checkbox("Use 3-round (Round-0 context) annotation",
-                          value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", False)))
+skip_without_key = st.checkbox(
+    "No LLM annotation: skip the step and write an empty annotation table",
+    value=bool(D.get("scp", {}).get("llm", {}).get("skip_without_key", False)),
+    help="For QC-only runs without an API key. Off by default: a missing key is an error "
+         "so a failed annotation is never silent (scp.llm.skip_without_key).")
+condition_b = st.checkbox("Use 3-round (Round-0 context) annotation (default, as published)",
+                          value=bool(D.get("scp", {}).get("llm", {}).get("condition_b", True)),
+                          help="Round 0 derives dataset-specific constraints from the experiment "
+                               "description before any cluster data are shown; Rounds 1-2 annotate "
+                               "and refine. Untick only to reproduce the plain two-pass prompt.")
 with st.expander("Advanced LLM options"):
     max_tokens = num_field(
         "Max output tokens",
@@ -371,6 +379,7 @@ if st.button("✅ Generate config + sample sheet", type="primary",
                                 "harmony_theta_max": float(h_theta_max)},
             "llm": {"provider": provider, "model": model, "api_key": api_key,
                     "base_url": base_url, "condition_b": bool(condition_b),
+                    "skip_without_key": bool(skip_without_key),
                     "max_tokens": int(max_tokens)},
         }
         sheet = st.session_state.get("sheet")
