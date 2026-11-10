@@ -1,0 +1,235 @@
+cell	library	detected_proteins	tms_cca_label	tms_cca_score	tms_pcaproject_label	tms_pcaproject_score	cca_score_pancreatic.B.cell	cca_score_endothelial.cell	cca_score_pancreatic.D.cell	cca_score_pancreatic.A.cell	cca_score_pancreatic.acinar.cell	cca_score_pancreatic.PP.cell	cca_score_leukocyte	cca_score_pancreatic.ductal.cel	cca_score_pancreatic.stellate.cell
+SC_01_s1-a1_1_7515	s1	722	pancreatic B cell	0.631	pancreatic ductal cel	0.957	0.631	0	0	0	0.153	0	0	0.216	0
+SC_02_s1-a2_1_7516	s1	1572	endothelial cell	0.448	pancreatic stellate cell	0.297	0.376	0.448	0	0.103	0	0.02	0	0.052	0
+SC_03_s1-a3_1_7517	s1	609	pancreatic acinar cell	0.588	leukocyte	1	0.397	0	0	0	0.588	0	0.014	0	0
+SC_04_s1-a4_1_7518	s1	1245	pancreatic B cell	0.866	leukocyte	0.921	0.866	0	0	0	0.073	0	0.062	0	0
+SC_08_s1-a8_1_7522	s1	1030	leukocyte	0.536	leukocyte	1	0.247	0	0	0.164	0.029	0	0.536	0.024	0
+SC_09_s1-a9_1_7523	s1	645	pancreatic acinar cell	0.711	leukocyte	1	0.198	0.072	0	0	0.711	0	0.019	0	0
+SC_10_s1-a10_1_7524	s1	568	pancreatic B cell	0.965	leukocyte	1	0.965	0	0	0	0.035	0	0	0	0
+SC_12_s1-a12_1_7526	s1	599	pancreatic acinar cell	0.934	leukocyte	1	0.047	0.019	0	0	0.934	0	0	0	0
+SC_13_s1-b1_1_7527	s1	503	pancreatic B cell	0.637	leukocyte	1	0.637	0	0	0	0.363	0	0	0	0
+SC_15_s1-b4_1_7530	s1	1024	pancreatic ductal cel	0.935	pancreatic ductal cel	0.949	0.065	0	0	0	0	0	0	0.935	0
+SC_16_s1-b5_1_7531	s1	564	pancreatic B cell	0.522	leukocyte	1	0.522	0	0	0	0.462	0	0.015	0	0
+SC_20_s1-b9_1_7535	s1	621	pancreatic ductal cel	0.941	pancreatic ductal cel	0.963	0.059	0	0	0	0	0	0	0.941	0
+SC_21_s1-b10_1_7536	s1	661	pancreatic B cell	0.736	leukocyte	1	0.736	0	0	0	0.246	0	0.018	0	0
+SC_22_s1-b11_1_7537	s1	1289	pancreatic B cell	0.736	pancreatic stellate cell	0.372	0.736	0	0	0.131	0.112	0.021	0	0	0
+SC_23_s1-b12_1_7538	s1	866	pancreatic acinar cell	0.904	leukocyte	1	0.07	0.026	0	0	0.904	0	0	0	0
+SC_24_s1-c1_1_7539	s1	803	pancreatic B cell	0.611	endothelial cell	0.433	0.611	0.008	0	0.098	0.282	0	0	0	0
+SC_25_s1-c3_1_7541	s1	1138	pancreatic B cell	0.434	pancreatic stellate cell	0.427	0.434	0.281	0	0.028	0.208	0.049	0	0	0
+SC_26_s1-c4_1_7542	s1	1167	pancreatic B cell	0.791	pancreatic stellate cell	0.415	0.791	0.167	0	0	0.042	0	0	0	0
+SC_28_s1-c6_1_7544	s1	1352	pancreatic B cell	0.401	pancreatic ductal cel	0.415	0.401	0.325	0	0.183	0	0.029	0	0.021	0.041
+SC_29_s1-c7_1_7545	s1	972	pancreatic B cell	0.514	pancreatic stellate cell	0.39	0.514	0.036	0	0.032	0.391	0	0	0.028	0
+SC_30_s1-c8_1_7546	s1	923	leukocyte	0.59	leukocyte	1	0.279	0	0	0	0.131	0	0.59	0	0
+SC_32_s1-c10_1_7548	s1	1351	pancreatic B cell	0.874	pancreatic stellate cell	0.381	0.874	0.064	0	0	0.062	0	0	0	0
+SC_33_s1-c11_1_7549	s1	1218	pancreatic B cell	0.68	pancreatic stellate cell	0.377	0.68	0	0	0.127	0.109	0.083	0	0	0
+SC_35_s1-d1_1_7551	s1	585	pancreatic B cell	0.567	leukocyte	1	0.567	0	0	0	0.414	0	0.019	0	0
+SC_37_s1-d3_1_7553	s1	1107	pancreatic B cell	0.462	pancreatic stellate cell	0.458	0.462	0.102	0	0.066	0.246	0.015	0	0.109	0
+SC_38_s1-d4_1_7554	s1	541	pancreatic B cell	0.764	leukocyte	1	0.764	0	0	0	0.236	0	0	0	0
+SC_39_s1-d5_1_7555	s1	572	pancreatic acinar cell	0.545	pancreatic stellate cell	0.574	0.455	0	0	0	0.545	0	0	0	0
+SC_40_s1-d6_1_7556	s1	770	pancreatic B cell	0.479	endothelial cell	0.478	0.479	0.104	0	0.276	0.109	0.032	0	0	0
+SC_41_s1-d7_1_7557	s1	1453	pancreatic B cell	0.772	pancreatic ductal cel	0.41	0.772	0.103	0	0.074	0.029	0.022	0	0	0
+SC_42_s1-d8_1_7558	s1	627	leukocyte	0.46	leukocyte	0.892	0.121	0	0	0	0.419	0	0.46	0	0
+SC_43_s1-d9_1_7559	s1	734	pancreatic acinar cell	0.5	leukocyte	1	0.483	0	0	0	0.5	0	0.018	0	0
+SC_44_s1-d10_1_7560	s1	706	pancreatic acinar cell	0.803	leukocyte	1	0.177	0.019	0	0	0.803	0	0	0	0
+SC_46_s1-d12_1_7562	s1	521	pancreatic B cell	0.656	leukocyte	1	0.656	0	0	0	0.344	0	0	0	0
+SC_50_s1-e4_1_7566	s1	1566	pancreatic B cell	0.706	pancreatic ductal cel	0.432	0.706	0	0.04	0.214	0.017	0.023	0	0	0
+SC_51_s1-e5_1_7567	s1	929	pancreatic acinar cell	0.832	leukocyte	1	0.043	0	0	0.021	0.832	0.029	0.076	0	0
+SC_52_s1-e6_1_7568	s1	1164	pancreatic acinar cell	0.809	pancreatic ductal cel	0.805	0.078	0	0	0	0.809	0	0	0.113	0
+SC_53_s1-e7_1_7569	s1	740	pancreatic acinar cell	0.774	leukocyte	1	0.202	0.024	0	0	0.774	0	0	0	0
+SC_54_s1-e8_1_7570	s1	1193	leukocyte	0.475	leukocyte	1	0.287	0	0	0	0.21	0	0.475	0.028	0
+SC_56_s1-e10_1_7572	s1	1630	pancreatic B cell	0.561	pancreatic stellate cell	0.375	0.561	0	0.13	0.033	0	0.089	0	0.15	0.037
+SC_57_s1-e11_1_7573	s1	675	pancreatic B cell	0.525	leukocyte	1	0.525	0.02	0	0	0.393	0	0.062	0	0
+SC_58_s1-e12_1_7574	s1	1312	pancreatic acinar cell	1	pancreatic ductal cel	0.627	0	0	0	0	1	0	0	0	0
+SC_60_s1-f2_1_7576	s1	1173	endothelial cell	0.903	endothelial cell	0.46	0.064	0.903	0	0.005	0.022	0.005	0	0	0
+SC_61_s1-f3_1_7577	s1	619	pancreatic B cell	0.788	leukocyte	1	0.788	0	0	0	0.051	0	0.104	0.057	0
+SC_62_s1-f4_1_7578	s1	886	pancreatic B cell	0.568	leukocyte	1	0.568	0	0	0.115	0.296	0	0.021	0	0
+SC_63_s1-f5_1_7579	s1	542	pancreatic acinar cell	1	leukocyte	0.594	0	0	0	0	1	0	0	0	0
+SC_64_s1-f6_1_7580	s1	819	pancreatic acinar cell	0.512	leukocyte	1	0.456	0.017	0	0.016	0.512	0	0	0	0
+SC_65_s1-f7_1_7581	s1	1415	leukocyte	0.471	leukocyte	0.718	0.205	0	0.129	0.156	0	0.039	0.471	0	0
+SC_66_s1-f8_1_7582	s1	1488	pancreatic B cell	0.742	pancreatic ductal cel	0.398	0.742	0	0	0.13	0	0.091	0	0.013	0.025
+SC_68_s1-f10_1_7584	s1	748	pancreatic B cell	0.83	leukocyte	1	0.83	0	0	0.028	0.02	0	0.123	0	0
+SC_69_s1-f11_1_7585	s1	999	pancreatic B cell	0.486	pancreatic stellate cell	0.394	0.486	0.008	0	0.106	0.193	0	0.208	0	0
+SC_72_s1-g2_1_7588	s1	652	pancreatic acinar cell	0.827	leukocyte	1	0.147	0.026	0	0	0.827	0	0	0	0
+SC_74_s1-g4_1_7590	s1	605	pancreatic B cell	0.789	leukocyte	1	0.789	0.02	0	0	0.178	0	0.014	0	0
+SC_75_s1-g5_1_7591	s1	830	pancreatic acinar cell	1	pancreatic ductal cel	0.58	0	0	0	0	1	0	0	0	0
+SC_76_s1-g6_1_7592	s1	1252	pancreatic B cell	0.505	pancreatic stellate cell	0.445	0.505	0.168	0	0.155	0	0.019	0	0.052	0.1
+SC_77_s1-g7_1_7593	s1	690	pancreatic acinar cell	0.497	leukocyte	1	0.456	0.025	0	0	0.497	0	0.023	0	0
+SC_01_s2-a1_1_7612	s2	1076	leukocyte	0.928	leukocyte	1	0.02	0	0	0.007	0.044	0	0.928	0	0
+SC_07_s2-a7_1_7618	s2	1338	pancreatic B cell	0.404	pancreatic stellate cell	0.434	0.404	0	0.232	0.072	0	0.292	0	0	0
+SC_08_s2-a8_1_7619	s2	1767	pancreatic B cell	0.931	pancreatic stellate cell	0.348	0.931	0	0	0.014	0	0.056	0	0	0
+SC_09_s2-a9_1_7620	s2	904	pancreatic B cell	0.398	leukocyte	1	0.398	0	0.151	0.045	0.175	0	0.181	0.049	0
+SC_10_s2-a10_1_7621	s2	1222	pancreatic acinar cell	0.39	leukocyte	0.792	0.323	0	0.192	0.065	0.39	0	0	0.03	0
+SC_11_s2-a11_1_7622	s2	1108	pancreatic B cell	0.467	leukocyte	1	0.467	0	0.012	0.029	0.422	0.046	0	0.025	0
+SC_12_s2-a12_1_7623	s2	684	pancreatic acinar cell	0.441	leukocyte	1	0.408	0	0	0	0.441	0	0.151	0	0
+SC_13_s2-b1_1_7624	s2	1164	pancreatic ductal cel	0.534	pancreatic stellate cell	0.479	0.275	0	0.027	0	0.015	0.021	0	0.534	0.127
+SC_14_s2-b3_1_7626	s2	693	pancreatic B cell	0.782	leukocyte	1	0.782	0	0	0	0.218	0	0	0	0
+SC_16_s2-b5_1_7628	s2	1409	pancreatic B cell	0.409	pancreatic stellate cell	0.392	0.409	0	0.186	0.043	0.021	0.341	0	0	0
+SC_18_s2-b7_1_7630	s2	585	pancreatic B cell	0.842	leukocyte	1	0.842	0	0	0.03	0.128	0	0	0	0
+SC_19_s2-b8_1_7631	s2	1160	pancreatic B cell	0.4	pancreatic stellate cell	0.417	0.4	0.117	0	0.275	0.172	0.036	0	0	0
+SC_20_s2-b9_1_7632	s2	691	pancreatic B cell	0.579	leukocyte	1	0.579	0	0	0	0.328	0	0.094	0	0
+SC_21_s2-b10_1_7633	s2	1350	pancreatic B cell	0.735	pancreatic ductal cel	0.382	0.735	0	0	0.041	0.039	0	0	0.149	0.036
+SC_22_s2-b11_1_7634	s2	1460	pancreatic B cell	0.488	leukocyte	0.605	0.488	0	0.141	0.202	0	0.012	0.156	0	0
+SC_23_s2-b12_1_7635	s2	1585	pancreatic B cell	0.682	pancreatic ductal cel	0.432	0.682	0	0.036	0.161	0	0.121	0	0	0
+SC_24_s2-c1_1_7636	s2	854	leukocyte	0.706	leukocyte	1	0.175	0	0	0.052	0	0	0.706	0.067	0
+SC_25_s2-c3_1_7638	s2	530	pancreatic B cell	0.633	leukocyte	1	0.633	0	0	0	0.367	0	0	0	0
+SC_26_s2-c4_1_7639	s2	890	pancreatic B cell	0.813	leukocyte	1	0.813	0	0	0	0.187	0	0	0	0
+SC_27_s2-c5_1_7640	s2	936	leukocyte	0.886	leukocyte	1	0.021	0.062	0	0.011	0	0.019	0.886	0	0
+SC_28_s2-c6_1_7641	s2	631	pancreatic B cell	0.698	leukocyte	1	0.698	0	0	0.04	0.261	0	0	0	0
+SC_30_s2-c8_1_7643	s2	1303	pancreatic B cell	0.547	pancreatic ductal cel	0.402	0.547	0	0.236	0.04	0	0.176	0	0	0
+SC_31_s2-c9_1_7644	s2	879	pancreatic B cell	0.71	leukocyte	1	0.71	0	0	0	0.007	0	0.222	0.061	0
+SC_35_s2-d1_1_7648	s2	1152	pancreatic acinar cell	0.413	leukocyte	1	0.328	0	0	0.011	0.413	0	0.248	0	0
+SC_38_s2-d4_1_7651	s2	611	pancreatic B cell	0.824	leukocyte	1	0.824	0	0	0	0.168	0	0.008	0	0
+SC_40_s2-d6_1_7653	s2	510	pancreatic B cell	0.647	leukocyte	1	0.647	0	0	0	0.353	0	0	0	0
+SC_41_s2-d7_1_7654	s2	563	pancreatic B cell	0.587	leukocyte	1	0.587	0	0	0	0.413	0	0	0	0
+SC_42_s2-d8_1_7655	s2	1535	pancreatic B cell	0.899	pancreatic stellate cell	0.36	0.899	0	0	0	0	0.052	0	0.049	0
+SC_43_s2-d9_1_7656	s2	1641	pancreatic B cell	0.38	pancreatic ductal cel	0.451	0.38	0.187	0.141	0.075	0.028	0.189	0	0	0
+SC_44_s2-d10_1_7657	s2	814	pancreatic B cell	0.649	pancreatic ductal cel	0.63	0.649	0	0.157	0	0.194	0	0	0	0
+SC_46_s2-d12_1_7659	s2	1521	pancreatic B cell	0.643	pancreatic stellate cell	0.357	0.643	0.091	0.037	0.045	0	0.165	0	0.019	0
+SC_47_s2-e1_1_7660	s2	975	leukocyte	0.529	leukocyte	1	0.316	0	0.038	0.039	0	0	0.529	0.078	0
+SC_48_s2-e2_1_7661	s2	1542	pancreatic PP cell	0.559	pancreatic ductal cel	0.426	0.093	0.18	0.024	0.098	0.027	0.559	0	0.018	0
+SC_49_s2-e3_1_7662	s2	871	leukocyte	0.643	leukocyte	1	0.245	0	0.023	0.029	0.029	0	0.643	0.032	0
+SC_50_s2-e4_1_7663	s2	801	pancreatic ductal cel	0.872	pancreatic ductal cel	0.606	0.104	0	0	0	0.015	0	0.009	0.872	0
+SC_51_s2-e5_1_7664	s2	1158	pancreatic B cell	0.36	leukocyte	1	0.36	0	0.022	0.053	0.181	0.02	0.289	0.075	0
+SC_58_s2-e12_1_7671	s2	880	pancreatic B cell	0.559	leukocyte	1	0.559	0	0.115	0.149	0	0	0.164	0.012	0
+SC_61_s2-f3_1_7674	s2	1162	pancreatic B cell	0.461	pancreatic stellate cell	0.463	0.461	0.142	0	0.029	0.245	0	0	0.071	0.051
+SC_62_s2-f4_1_7675	s2	705	pancreatic B cell	0.504	leukocyte	1	0.504	0	0	0	0.412	0	0.084	0	0
+SC_63_s2-f5_1_7676	s2	698	pancreatic B cell	0.88	leukocyte	1	0.88	0	0.034	0.069	0.016	0	0	0	0
+SC_68_s2-f10_1_7681	s2	1285	pancreatic acinar cell	1	pancreatic ductal cel	0.792	0	0	0	0	1	0	0	0	0
+SC_70_s2-f12_1_7683	s2	1229	leukocyte	0.474	leukocyte	1	0.446	0	0.04	0	0	0	0.474	0.041	0
+SC_71_s2-g1_1_7684	s2	878	pancreatic B cell	0.568	leukocyte	1	0.568	0	0.099	0	0.159	0	0.157	0.016	0
+SC_73_s2-g3_1_7686	s2	1600	pancreatic B cell	0.937	pancreatic stellate cell	0.363	0.937	0	0	0	0	0.032	0	0.031	0
+SC_74_s2-g4_1_7687	s2	791	pancreatic acinar cell	0.603	leukocyte	1	0.175	0	0	0	0.603	0	0.092	0.13	0
+SC_75_s2-g5_1_7688	s2	655	pancreatic acinar cell	1	pancreatic ductal cel	0.745	0	0	0	0	1	0	0	0	0
+SC_76_s2-g6_1_7689	s2	1258	pancreatic B cell	0.526	pancreatic stellate cell	0.482	0.526	0.111	0.101	0.032	0.23	0	0	0	0
+SC_77_s2-g7_1_7690	s2	985	pancreatic B cell	0.488	leukocyte	1	0.488	0	0	0	0.308	0	0.194	0.01	0
+SC_83_s2-h1_1_7696	s2	1511	leukocyte	0.387	leukocyte	0.532	0.303	0	0.106	0.188	0	0.016	0.387	0	0
+SC_85_s2-h3_1_7698	s2	553	pancreatic B cell	0.902	leukocyte	1	0.902	0	0	0	0.098	0	0	0	0
+SC_89_s2-h7_1_7702	s2	739	pancreatic B cell	0.571	pancreatic stellate cell	0.509	0.571	0	0	0.182	0.247	0	0	0	0
+SC_93_s2-h11_1_7706	s2	703	pancreatic B cell	0.817	endothelial cell	0.44	0.817	0	0	0.029	0.126	0	0	0.029	0
+SC_04_s1-a4_1_7712	s1	810	pancreatic A cell	0.451	leukocyte	1	0.322	0	0.03	0.451	0.165	0	0.005	0.026	0
+SC_05_s1-a5_1_7713	s1	1159	pancreatic acinar cell	0.429	leukocyte	1	0.38	0	0	0.154	0.429	0.024	0	0.013	0
+SC_06_s1-a6_1_7714	s1	827	pancreatic acinar cell	1	pancreatic ductal cel	0.879	0	0	0	0	1	0	0	0	0
+SC_07_s1-a7_1_7715	s1	917	pancreatic B cell	0.273	leukocyte	1	0.273	0	0.227	0.038	0.253	0	0.163	0.047	0
+SC_08_s1-a8_1_7716	s1	1851	pancreatic B cell	0.511	leukocyte	0.34	0.511	0	0.094	0.087	0	0.113	0.194	0	0
+SC_11_s1-a11_1_7719	s1	1135	pancreatic B cell	0.73	leukocyte	1	0.73	0	0	0	0.237	0	0.024	0.01	0
+SC_12_s1-a12_1_7720	s1	932	pancreatic acinar cell	0.694	leukocyte	1	0.252	0	0.016	0.039	0.694	0	0	0	0
+SC_13_s1-b1_1_7721	s1	865	pancreatic B cell	0.33	leukocyte	1	0.33	0	0	0.125	0.246	0	0.299	0	0
+SC_14_s1-b3_1_7723	s1	516	pancreatic B cell	0.682	leukocyte	1	0.682	0	0	0	0.318	0	0	0	0
+SC_16_s1-b5_1_7725	s1	660	pancreatic B cell	0.637	leukocyte	1	0.637	0	0	0.125	0.178	0	0.061	0	0
+SC_18_s1-b7_1_7727	s1	1194	pancreatic B cell	0.605	leukocyte	0.948	0.605	0	0	0.14	0.115	0	0.123	0.016	0
+SC_19_s1-b8_1_7728	s1	1425	pancreatic B cell	0.284	leukocyte	0.703	0.284	0	0.049	0.041	0.278	0.159	0.172	0.017	0
+SC_20_s1-b9_1_7729	s1	970	leukocyte	0.471	leukocyte	1	0.391	0	0.016	0	0.036	0	0.471	0.086	0
+SC_21_s1-b10_1_7730	s1	999	pancreatic B cell	0.729	leukocyte	1	0.729	0	0	0	0.271	0	0	0	0
+SC_22_s1-b11_1_7731	s1	876	leukocyte	0.464	leukocyte	1	0.111	0	0	0.05	0.375	0	0.464	0	0
+SC_23_s1-b12_1_7732	s1	676	pancreatic B cell	0.911	leukocyte	1	0.911	0	0	0.027	0.048	0	0	0.014	0
+SC_24_s1-c1_1_7733	s1	1144	pancreatic acinar cell	0.251	pancreatic stellate cell	0.4	0.196	0	0.167	0.174	0.251	0	0	0.212	0
+SC_25_s1-c3_1_7735	s1	629	pancreatic B cell	0.581	leukocyte	1	0.581	0	0	0.03	0.389	0	0	0	0
+SC_27_s1-c5_1_7737	s1	1204	pancreatic acinar cell	0.965	pancreatic ductal cel	0.844	0	0	0.035	0	0.965	0	0	0	0
+SC_31_s1-c9_1_7741	s1	603	pancreatic B cell	0.859	leukocyte	1	0.859	0	0	0	0.141	0	0	0	0
+SC_32_s1-c10_1_7742	s1	1264	pancreatic B cell	0.751	pancreatic ductal cel	0.393	0.751	0.038	0	0.065	0.146	0	0	0	0
+SC_34_s1-c12_1_7744	s1	1521	pancreatic B cell	0.361	leukocyte	0.529	0.361	0	0.187	0.099	0	0.143	0.21	0	0
+SC_35_s1-d1_1_7745	s1	564	pancreatic acinar cell	1	leukocyte	0.476	0	0	0	0	1	0	0	0	0
+SC_37_s1-d3_1_7747	s1	887	pancreatic acinar cell	0.601	leukocyte	0.523	0.325	0	0	0.075	0.601	0	0	0	0
+SC_38_s1-d4_1_7748	s1	1355	pancreatic B cell	0.835	leukocyte	0.731	0.835	0	0.038	0	0.028	0.014	0.085	0	0
+SC_41_s1-d7_1_7751	s1	1054	leukocyte	0.563	leukocyte	1	0.423	0	0	0.015	0	0	0.563	0	0
+SC_42_s1-d8_1_7752	s1	945	pancreatic B cell	0.797	leukocyte	1	0.797	0	0	0	0.203	0	0	0	0
+SC_43_s1-d9_1_7753	s1	736	pancreatic acinar cell	0.676	leukocyte	1	0.305	0	0	0	0.676	0	0	0.019	0
+SC_44_s1-d10_1_7754	s1	673	pancreatic ductal cel	0.812	pancreatic ductal cel	1	0.101	0	0	0	0.086	0	0	0.812	0
+SC_45_s1-d11_1_7755	s1	1136	pancreatic B cell	0.684	pancreatic ductal cel	0.401	0.684	0	0	0.263	0.035	0.018	0	0	0
+SC_46_s1-d12_1_7756	s1	1137	pancreatic B cell	0.722	leukocyte	1	0.722	0	0.03	0	0.028	0.036	0.171	0.014	0
+SC_48_s1-e2_1_7758	s1	1039	leukocyte	0.249	leukocyte	1	0.082	0	0.154	0.244	0.156	0.116	0.249	0	0
+SC_49_s1-e3_1_7759	s1	851	pancreatic B cell	0.825	leukocyte	1	0.825	0	0	0	0.175	0	0	0	0
+SC_51_s1-e5_1_7761	s1	1006	leukocyte	0.266	leukocyte	1	0.236	0	0.162	0.168	0.05	0	0.266	0.118	0
+SC_52_s1-e6_1_7762	s1	551	pancreatic B cell	0.531	leukocyte	1	0.531	0	0	0	0.469	0	0	0	0
+SC_53_s1-e7_1_7763	s1	674	pancreatic B cell	0.819	leukocyte	1	0.819	0	0	0.147	0.034	0	0	0	0
+SC_54_s1-e8_1_7764	s1	1573	pancreatic B cell	0.897	pancreatic stellate cell	0.352	0.897	0	0.058	0	0	0.045	0	0	0
+SC_55_s1-e9_1_7765	s1	1220	leukocyte	0.97	leukocyte	0.963	0.028	0	0.002	0	0	0	0.97	0	0
+SC_56_s1-e10_1_7766	s1	1764	pancreatic B cell	0.706	pancreatic ductal cel	0.34	0.706	0.042	0.131	0.121	0	0	0	0	0
+SC_57_s1-e11_1_7767	s1	1311	endothelial cell	0.683	pancreatic ductal cel	0.402	0.295	0.683	0	0	0.022	0	0	0	0
+SC_58_s1-e12_1_7768	s1	652	pancreatic acinar cell	1	leukocyte	0.375	0	0	0	0	1	0	0	0	0
+SC_59_s1-f1_1_7769	s1	873	pancreatic acinar cell	0.778	leukocyte	1	0.207	0	0.014	0	0.778	0	0	0	0
+SC_60_s1-f2_1_7770	s1	1192	pancreatic B cell	0.836	leukocyte	0.874	0.836	0	0.018	0	0.092	0	0.045	0.009	0
+SC_63_s1-f5_1_7773	s1	1240	endothelial cell	0.41	pancreatic stellate cell	0.416	0.178	0.41	0	0	0.06	0	0	0.205	0.146
+SC_64_s1-f6_1_7774	s1	1329	pancreatic B cell	0.298	pancreatic ductal cel	0.413	0.298	0.186	0.024	0.143	0.028	0.208	0	0.113	0
+SC_66_s1-f8_1_7776	s1	836	leukocyte	0.488	leukocyte	1	0.139	0	0	0	0.373	0	0.488	0	0
+SC_67_s1-f9_1_7777	s1	1672	pancreatic B cell	0.987	pancreatic stellate cell	0.351	0.987	0	0	0	0	0	0	0.013	0
+SC_68_s1-f10_1_7778	s1	913	leukocyte	0.55	leukocyte	1	0.36	0	0.022	0.028	0.009	0	0.55	0.032	0
+SC_69_s1-f11_1_7779	s1	698	pancreatic acinar cell	0.713	leukocyte	0.997	0.287	0	0	0	0.713	0	0	0	0
+SC_70_s1-f12_1_7780	s1	502	pancreatic acinar cell	1	pancreatic ductal cel	0.468	0	0	0	0	1	0	0	0	0
+SC_71_s1-g1_1_7781	s1	1164	endothelial cell	0.582	pancreatic ductal cel	0.407	0.137	0.582	0	0.096	0.026	0.159	0	0	0
+SC_75_s1-g5_1_7785	s1	976	leukocyte	0.816	leukocyte	1	0.014	0	0	0	0.049	0	0.816	0.122	0
+SC_76_s1-g6_1_7786	s1	750	pancreatic B cell	0.892	leukocyte	1	0.892	0	0	0	0.004	0	0.091	0.013	0
+SC_78_s1-g8_1_7788	s1	1603	pancreatic B cell	0.577	leukocyte	0.478	0.577	0	0.095	0.073	0.045	0	0.195	0.015	0
+SC_79_s1-g9_1_7789	s1	737	pancreatic acinar cell	1	leukocyte	0.417	0	0	0	0	1	0	0	0	0
+SC_80_s1-g10_1_7790	s1	1161	pancreatic acinar cell	0.441	leukocyte	1	0.272	0	0.131	0.028	0.441	0	0.114	0.013	0
+SC_81_s1-g11_1_7791	s1	1258	pancreatic B cell	0.59	pancreatic stellate cell	0.45	0.59	0.027	0.025	0	0.016	0	0	0.274	0.067
+SC_83_s1-h1_1_7793	s1	557	pancreatic B cell	0.766	leukocyte	1	0.766	0	0	0	0.234	0	0	0	0
+SC_85_s1-h3_1_7795	s1	1177	pancreatic ductal cel	0.34	pancreatic stellate cell	0.476	0.297	0.194	0	0.028	0.077	0.049	0	0.34	0.014
+SC_86_s1-h4_1_7796	s1	563	pancreatic B cell	0.91	leukocyte	1	0.91	0	0	0	0.09	0	0	0	0
+SC_87_s1-h5_1_7797	s1	665	pancreatic B cell	0.521	pancreatic stellate cell	0.725	0.521	0	0	0.013	0.452	0.013	0	0	0
+SC_88_s1-h6_1_7798	s1	1085	pancreatic B cell	0.529	leukocyte	1	0.529	0	0.013	0.001	0.074	0	0.197	0.186	0
+SC_89_s1-h7_1_7799	s1	1374	pancreatic ductal cel	0.826	pancreatic ductal cel	0.482	0.125	0	0.024	0.003	0.01	0	0.012	0.826	0
+SC_90_s1-h8_1_7800	s1	901	pancreatic B cell	0.802	leukocyte	1	0.802	0	0	0.084	0.114	0	0	0	0
+SC_91_s1-h9_1_7801	s1	743	pancreatic acinar cell	0.372	leukocyte	1	0.26	0	0	0	0.372	0	0.368	0	0
+SC_92_s1-h10_1_7802	s1	1507	pancreatic acinar cell	0.889	pancreatic ductal cel	0.593	0	0	0.111	0	0.889	0	0	0	0
+SC_93_s1-h11_1_7803	s1	770	pancreatic acinar cell	1	leukocyte	0.363	0	0	0	0	1	0	0	0	0
+SC_94_s1-h12_1_7804	s1	502	pancreatic acinar cell	0.694	leukocyte	0.594	0.306	0	0	0	0.694	0	0	0	0
+SC_01_s1-a1_1_7806	s1	1014	pancreatic acinar cell	0.511	pancreatic ductal cel	0.883	0.43	0	0.032	0	0.511	0	0	0.027	0
+SC_02_s1-a2_1_7807	s1	683	pancreatic B cell	0.641	leukocyte	1	0.641	0	0	0	0.359	0	0	0	0
+SC_03_s1-a3_1_7808	s1	1501	pancreatic B cell	0.479	pancreatic ductal cel	0.401	0.479	0	0.196	0.218	0.02	0.088	0	0	0
+SC_06_s1-a6_1_7811	s1	1454	pancreatic B cell	0.878	pancreatic ductal cel	0.417	0.878	0	0.057	0.03	0	0.036	0	0	0
+SC_08_s1-a8_1_7813	s1	2164	pancreatic B cell	0.446	pancreatic ductal cel	0.472	0.446	0	0.148	0	0.38	0	0	0.026	0
+SC_09_s1-a9_1_7814	s1	818	leukocyte	0.646	leukocyte	1	0.132	0	0	0.029	0.181	0	0.646	0.013	0
+SC_10_s1-a10_1_7815	s1	665	pancreatic B cell	0.796	leukocyte	1	0.796	0	0	0	0.204	0	0	0	0
+SC_11_s1-a11_1_7816	s1	1341	pancreatic ductal cel	0.64	pancreatic stellate cell	0.397	0.159	0.105	0.039	0.024	0	0.033	0	0.64	0
+SC_13_s1-b1_1_7818	s1	1185	leukocyte	0.565	leukocyte	1	0.376	0	0	0	0.034	0	0.565	0.025	0
+SC_14_s1-b3_1_7820	s1	596	pancreatic acinar cell	1	pancreatic ductal cel	0.736	0	0	0	0	1	0	0	0	0
+SC_15_s1-b4_1_7821	s1	1036	pancreatic acinar cell	0.373	leukocyte	1	0.373	0	0	0	0.373	0	0.084	0.17	0
+SC_17_s1-b6_1_7823	s1	1370	pancreatic B cell	0.709	leukocyte	0.704	0.709	0	0	0	0.083	0	0.208	0	0
+SC_18_s1-b7_1_7824	s1	534	pancreatic acinar cell	0.843	leukocyte	1	0.157	0	0	0	0.843	0	0	0	0
+SC_19_s1-b8_1_7825	s1	768	pancreatic B cell	0.681	leukocyte	1	0.681	0	0.015	0.019	0.232	0	0.041	0.013	0
+SC_21_s1-b10_1_7827	s1	797	pancreatic acinar cell	0.649	leukocyte	1	0.181	0	0.134	0.021	0.649	0	0	0.015	0
+SC_24_s1-c1_1_7830	s1	773	pancreatic B cell	0.659	leukocyte	1	0.659	0	0.023	0	0.318	0	0	0	0
+SC_25_s1-c3_1_7832	s1	833	leukocyte	0.884	leukocyte	1	0.048	0	0	0	0.068	0	0.884	0	0
+SC_27_s1-c5_1_7834	s1	642	pancreatic B cell	0.811	pancreatic ductal cel	0.545	0.811	0	0.03	0.073	0.042	0	0	0.045	0
+SC_28_s1-c6_1_7835	s1	1760	pancreatic B cell	0.472	pancreatic ductal cel	0.341	0.472	0.165	0.042	0.202	0	0.118	0	0	0
+SC_29_s1-c7_1_7836	s1	699	pancreatic acinar cell	1	pancreatic ductal cel	0.499	0	0	0	0	1	0	0	0	0
+SC_30_s1-c8_1_7837	s1	1336	pancreatic PP cell	0.254	pancreatic ductal cel	0.427	0.082	0.213	0.177	0.21	0.032	0.254	0	0.011	0.021
+SC_31_s1-c9_1_7838	s1	1472	pancreatic D cell	0.729	pancreatic ductal cel	0.434	0.237	0	0.729	0.024	0.01	0	0	0	0
+SC_37_s1-d3_1_7844	s1	737	leukocyte	0.623	leukocyte	1	0.11	0	0	0	0	0	0.623	0.268	0
+SC_38_s1-d4_1_7845	s1	1305	pancreatic B cell	0.304	pancreatic stellate cell	0.42	0.304	0	0.027	0.252	0.124	0.292	0	0	0
+SC_39_s1-d5_1_7846	s1	1262	pancreatic A cell	0.375	pancreatic stellate cell	0.39	0.307	0	0	0.375	0.04	0	0.09	0.188	0
+SC_43_s1-d9_1_7850	s1	1030	pancreatic acinar cell	0.969	pancreatic ductal cel	0.938	0	0	0.031	0	0.969	0	0	0	0
+SC_44_s1-d10_1_7851	s1	854	pancreatic acinar cell	0.536	leukocyte	1	0.372	0	0.075	0.017	0.536	0	0	0	0
+SC_46_s1-d12_1_7853	s1	838	pancreatic ductal cel	0.992	pancreatic ductal cel	1	0	0	0	0	0.008	0	0	0.992	0
+SC_47_s1-e1_1_7854	s1	732	pancreatic B cell	0.694	leukocyte	1	0.694	0	0.126	0	0.056	0	0.124	0	0
+SC_49_s1-e3_1_7856	s1	631	pancreatic acinar cell	0.692	leukocyte	0.879	0.308	0	0	0	0.692	0	0	0	0
+SC_50_s1-e4_1_7857	s1	1314	pancreatic B cell	0.401	pancreatic ductal cel	0.404	0.401	0.126	0.056	0.116	0	0.102	0	0.073	0.126
+SC_51_s1-e5_1_7858	s1	945	pancreatic B cell	0.459	leukocyte	1	0.459	0	0.017	0	0.333	0	0.168	0.023	0
+SC_52_s1-e6_1_7859	s1	925	pancreatic acinar cell	0.404	leukocyte	1	0.311	0	0	0	0.404	0	0.259	0.026	0
+SC_53_s1-e7_1_7860	s1	1442	endothelial cell	0.429	pancreatic ductal cel	0.417	0.02	0.429	0.072	0.128	0.067	0.284	0	0	0
+SC_54_s1-e8_1_7861	s1	1330	leukocyte	0.768	leukocyte	0.946	0.184	0	0	0	0.029	0	0.768	0.019	0
+SC_55_s1-e9_1_7862	s1	848	pancreatic B cell	0.693	leukocyte	1	0.693	0	0.025	0.187	0.095	0	0	0	0
+SC_56_s1-e10_1_7863	s1	1533	pancreatic A cell	0.353	pancreatic ductal cel	0.436	0.12	0.156	0.092	0.353	0.023	0.227	0	0.01	0.02
+SC_57_s1-e11_1_7864	s1	862	leukocyte	0.79	leukocyte	1	0.182	0	0	0.019	0	0	0.79	0.008	0
+SC_59_s1-f1_1_7866	s1	570	pancreatic acinar cell	0.844	pancreatic ductal cel	0.495	0.156	0	0	0	0.844	0	0	0	0
+SC_63_s1-f5_1_7870	s1	792	pancreatic B cell	0.918	pancreatic ductal cel	0.428	0.918	0	0	0	0.067	0	0.015	0	0
+SC_66_s1-f8_1_7873	s1	551	pancreatic acinar cell	0.636	leukocyte	0.518	0.364	0	0	0	0.636	0	0	0	0
+SC_67_s1-f9_1_7874	s1	676	pancreatic B cell	0.919	leukocyte	1	0.919	0	0	0	0.081	0	0	0	0
+SC_68_s1-f10_1_7875	s1	1711	pancreatic B cell	0.719	pancreatic stellate cell	0.345	0.719	0	0.174	0.046	0	0.061	0	0	0
+SC_70_s1-f12_1_7877	s1	564	pancreatic acinar cell	0.527	leukocyte	1	0.473	0	0	0	0.527	0	0	0	0
+SC_71_s1-g1_1_7878	s1	850	leukocyte	0.791	leukocyte	1	0.093	0	0	0	0.115	0	0.791	0	0
+SC_72_s1-g2_1_7879	s1	1144	pancreatic B cell	0.699	pancreatic stellate cell	0.479	0.699	0	0.017	0.03	0.065	0	0	0.19	0
+SC_74_s1-g4_1_7881	s1	1010	pancreatic acinar cell	0.415	leukocyte	1	0.19	0	0	0	0.415	0	0.394	0	0
+SC_75_s1-g5_1_7882	s1	820	pancreatic B cell	0.453	leukocyte	1	0.453	0	0	0	0.259	0	0.288	0	0
+SC_77_s1-g7_1_7884	s1	1216	leukocyte	0.451	leukocyte	0.953	0.312	0	0	0	0.214	0	0.451	0.023	0
+SC_78_s1-g8_1_7885	s1	794	pancreatic B cell	0.471	leukocyte	1	0.471	0	0.039	0	0.103	0	0.387	0	0
+SC_79_s1-g9_1_7886	s1	781	pancreatic B cell	0.898	leukocyte	1	0.898	0	0	0.037	0.064	0	0	0	0
+SC_80_s1-g10_1_7887	s1	1041	leukocyte	0.709	leukocyte	1	0.16	0	0.005	0	0	0	0.709	0.126	0
+SC_81_s1-g11_1_7888	s1	1380	leukocyte	0.545	leukocyte	0.747	0.087	0	0.196	0.083	0.078	0.011	0.545	0	0
+SC_87_s1-h5_1_7894	s1	1164	pancreatic B cell	0.58	pancreatic ductal cel	0.436	0.58	0	0.386	0.034	0	0	0	0	0
+SC_88_s1-h6_1_7895	s1	701	pancreatic acinar cell	0.399	leukocyte	1	0.265	0	0.016	0	0.399	0	0.283	0.037	0
+SC_89_s1-h7_1_7896	s1	981	pancreatic acinar cell	0.577	leukocyte	1	0.232	0	0	0	0.577	0	0.028	0.163	0
+SC_90_s1-h8_1_7897	s1	788	pancreatic acinar cell	0.566	leukocyte	1	0.3	0	0	0.01	0.566	0	0.125	0	0
+SC_91_s1-h9_1_7898	s1	699	pancreatic B cell	0.788	leukocyte	1	0.788	0	0	0	0.032	0	0.18	0	0
+SC_93_s1-h11_1_7900	s1	1751	pancreatic B cell	0.501	pancreatic ductal cel	0.298	0.501	0.121	0.217	0.126	0.035	0	0	0	0
