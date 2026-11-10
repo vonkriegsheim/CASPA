@@ -29,5 +29,8 @@ Insulin (Ins1) is detected in 2.6% and glucagon (Gcg) in 6.0% of proteome cells,
 reference-abundance artefact. Of the 77 proteome cells in the top tertile of acinar-enzyme intensity (Cpa1, Ctrb1, Cela2a, Prss2, Pnlip, Cel),
 CCA/TMS-all labels 37 acinar, 21 beta, 14 leukocyte; PCA-projection labels 57 leukocyte, 17 ductal, 0 acinar.
 
-Still to do once `scp/clustering/scp_cluster_assignments.tsv` of the published D2 run is available: cluster x Seurat-label contingency
-table against the CASPA/LLM annotations of C0-C7 (`compare_to_clusters.py`, to be written).
+Cluster-level comparison (`compare_to_clusters.py`, published D2 run, cluster sizes 26/27/30/27/35/23/44/22 for C0-C7;
+tables `cluster_by_<reference>_<mode>.tsv`): with the non-islet Tabula Muris Senis reference, cca labels all 26 cells of the
+injured acinar cluster C0 acinar but also calls the ductal cluster C7 (18/22) and the activated-stellate cluster C4 (22/35) acinar;
+pcaproject recovers the three immune clusters C1, C3, C6 (94/98 cells leukocyte) but calls C0 ductal or leukocyte (25/26).
+With all nine classes, cca gives a beta-cell majority in every cluster. No configuration recovers all compartments.

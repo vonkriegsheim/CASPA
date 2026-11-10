@@ -1,0 +1,9 @@
+cluster	CASPA annotation	activated_stellate	beta	ductal	immune_other	macrophage	schwann
+C0	Injured acinar	1	1	16	0	7	1
+C1	Macrophage (Mrc1+)	0	0	0	0	26	1
+C2	Stellate / myeloid (low depth)	0	0	2	2	20	6
+C3	Lymphocyte / low-complexity immune	0	0	5	14	8	0
+C4	Stellate (activated)	7	0	1	0	0	27
+C5	Myofibroblast	0	0	0	0	0	23
+C6	Myeloid	0	0	0	0	43	1
+C7	Ductal	0	0	9	1	12	0

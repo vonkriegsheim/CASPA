@@ -1,0 +1,9 @@
+cluster	CASPA annotation	endothelial cell	leukocyte	pancreatic ductal cel	pancreatic stellate cell
+C0	Injured acinar	0	10	15	1
+C1	Macrophage (Mrc1+)	0	26	1	0
+C2	Stellate / myeloid (low depth)	0	22	8	0
+C3	Lymphocyte / low-complexity immune	0	25	2	0
+C4	Stellate (activated)	4	0	15	16
+C5	Myofibroblast	0	0	20	3
+C6	Myeloid	0	43	1	0
+C7	Ductal	0	14	8	0
